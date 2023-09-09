@@ -22,7 +22,9 @@ Dessaforma, não há interpretação da AST durante runtime. O Transpiling acont
 
 ```elixir
 defmodule Rinha.Fib do
-  use Transpiler, source: {:ast, json: ".rinha/files/fib.json"}
+  use Transpiler,
+    source: {:ast, json: ".rinha/files/fib.json"},
+    parser: Rinha.Parser
 end
 ```
 
