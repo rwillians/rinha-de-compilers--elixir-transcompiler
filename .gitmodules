@@ -1,0 +1,4 @@
+[submodule "rinha"]
+	path = .rinha
+	url = git@github.com:aripiprazole/rinha-de-compiler.git
+	branch = main
