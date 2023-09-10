@@ -97,7 +97,7 @@ defimpl Rinha.Parser, for: Parser.Name do
         location: location
       }) do
     with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{struct | text: text, location: location}}
+      {:ok, %{struct | text: String.to_atom(text), location: location}}
     end
   end
 end
@@ -120,7 +120,7 @@ defimpl Rinha.Parser, for: Parser.Function.Parameter do
         location: location
       }) do
     with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{struct | name: name, location: location}}
+      {:ok, %{struct | name: String.to_atom(name), location: location}}
     end
   end
 end
@@ -150,8 +150,7 @@ defimpl Rinha.Parser, for: Parser.Function.Definition do
          {:ok, params} <- pn(Parser.Function.Parameter, params),
          {:ok, block} <- p(Any, block),
          {:ok, next} <- p(Any, next) do
-      {:ok,
-       %{definition | name: name, params: params, block: block, location: location, next: next}}
+      {:ok, %{definition | name: name, params: params, block: block, location: location, next: next}}
     end
   end
 end
@@ -171,7 +170,7 @@ defimpl Rinha.Parser, for: Parser.Function.Reference do
         location: location
       }) do
     with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{ref | name: name, location: location}}
+      {:ok, %{ref | name: String.to_atom(name), location: location}}
     end
   end
 end
@@ -318,7 +317,7 @@ defimpl Rinha.Parser, for: Parser.Variable.Reference do
         location: location
       }) do
     with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{ref | name: name, location: location}}
+      {:ok, %{ref | name: String.to_atom(name), location: location}}
     end
   end
 end

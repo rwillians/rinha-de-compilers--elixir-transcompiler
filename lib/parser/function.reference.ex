@@ -3,7 +3,7 @@ defmodule Parser.Function.Reference do
 
   @typedoc false
   @type t :: %Parser.Function.Reference{
-          name: String.t(),
+          name: atom,
           location: Parser.Location.t()
         }
   defstruct [:name, :location]

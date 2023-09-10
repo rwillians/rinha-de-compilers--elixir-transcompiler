@@ -8,7 +8,8 @@ defmodule Parser do
     quote do
       def parse_many(t, [head | tail]) do
         with {:ok, value} <- parse(t, head),
-             do: {:ok, [value] ++ parse_many(t, tail)}
+             {:ok, values} <- parse_many(t, tail),
+             do: {:ok, [value] ++ values}
       end
 
       def parse_many(t, []), do: {:ok, []}
@@ -30,10 +31,10 @@ defmodule Parser do
   @doc """
   A function that, given a parser, can parse the `value` into a `Parser.Module`.
   """
-  @spec parse(value :: term, parser :: module) ::
+  @spec parse(parser :: module, value :: term) ::
     {:ok, [Parser.Function.Definition.t()], Parser.Module.t()} | {:error, term}
 
-  def parse(value, parser) do
+  def parse(parser, value) do
     with {:ok, tree} <- apply(parser, :parse, [%Parser.Module{}, value]),
          {fns, tree} <- split_fns_from_tree(tree),
          do: {:ok, fns, tree}
@@ -42,11 +43,11 @@ defmodule Parser do
   @doc """
   Same as `parse/2`, but raises an error if something goes wrong.
   """
-  @spec parse(value :: term, parser :: module) ::
+  @spec parse(parser :: module, value :: term) ::
     {[Parser.Function.Definition.t()], Parser.Module.t()}
 
-  def parse!(value, parser) do
-    {:ok, fns, tree} = parse(value, parser)
+  def parse!(parser, value) do
+    {:ok, fns, tree} = parse(parser, value)
     {fns, tree}
   end
 
@@ -56,7 +57,7 @@ defmodule Parser do
 
   defp extract_fns(acc \\ [], node)
   defp extract_fns(acc, %Parser.Module{block: next}), do: extract_fns(acc, next)
-  defp extract_fns(acc, %Parser.Function.Definition{} = node), do: extract_fns([node | acc], node.next)
+  defp extract_fns(acc, %Parser.Function.Definition{} = node), do: extract_fns([%{node | next: nil} | acc], node.next)
   defp extract_fns(acc, %_{next: next}), do: extract_fns(acc, next)
   defp extract_fns(acc, _), do: :lists.reverse(acc)
 
