@@ -10,3 +10,13 @@ defmodule Parser.Function.Call do
         }
   defstruct [:callee, :args, :location, next: nil]
 end
+
+defimpl Transpiler.Node, for: Parser.Function.Call do
+  def transpile(node, mod) do
+    args =
+      for arg <- node.args,
+          do: Transpiler.Node.transpile(arg, mod)
+
+    {node.callee.name, [], args}
+  end
+end

@@ -10,3 +10,16 @@ defmodule Parser.If do
         }
   defstruct [:condition, :then, :otherwise, :location]
 end
+
+defimpl Transpiler.Node, for: Parser.If do
+  def transpile(node, mod) do
+    {:if, [context: mod, imports: [{2, Kernel}]],
+     [
+       Transpiler.Node.transpile(node.condition, mod),
+       [
+         do: Transpiler.Node.transpile(node.then, mod),
+         else: Transpiler.Node.transpile(node.otherwise, mod)
+       ]
+     ]}
+  end
+end

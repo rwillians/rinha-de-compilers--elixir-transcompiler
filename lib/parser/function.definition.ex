@@ -11,3 +11,19 @@ defmodule Parser.Function.Definition do
         }
   defstruct [:name, :params, :block, :location, next: nil]
 end
+
+defimpl Transpiler.Node, for: Parser.Function.Definition do
+  def transpile(node, mod) do
+    params =
+      for p <- node.params,
+          do: Transpiler.Node.transpile(p, mod)
+
+    {:def, [context: mod, imports: [{1, Kernel}, {2, Kernel}]],
+      [
+        {node.name.text, [context: mod], params},
+        [
+          do: {:__block__, [], List.flatten([Transpiler.Node.transpile(node.block, mod)])}
+        ]
+      ]}
+  end
+end

@@ -8,3 +8,7 @@ defmodule Parser.Literal.Integer do
         }
   defstruct [:value, :location]
 end
+
+defimpl Transpiler.Node, for: Parser.Literal.Integer do
+  def transpile(node, _mod), do: node.value
+end
