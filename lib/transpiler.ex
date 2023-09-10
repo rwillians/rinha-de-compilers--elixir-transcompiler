@@ -18,7 +18,7 @@ defmodule Transpiler do
                 source: {:ast, json: ".rinha/files/fib.json"},
                 parser: Rinha.Parser
             end
-        ```
+            ```
 
         """)
 
@@ -42,13 +42,13 @@ defmodule Transpiler do
 
       {fns, tree} = File.read!(@external_resource)
                     |> Jason.decode!(keys: :atoms)
-                    |> unquote(parser).parse()
-                    |> Parser.split_on_fns
+                    |> Parser.parse!(unquote(parser))
 
+      @fns fns
       @tree tree
 
       def main do
-        @tree
+        {@fns, @tree}
       end
     end
   end

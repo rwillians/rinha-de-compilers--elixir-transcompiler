@@ -4,7 +4,7 @@ defmodule Parser.BinaryOp do
   @typedoc false
   @type t :: %Parser.BinaryOp{
           lhs: Parser.expr(),
-          op: :eq | :ne | :lt | :gt | :lte | :gte | :add | :sub | :mult | :div,
+          op: :eq | :ne | :lt | :gt | :lte | :gte | :add | :sub | :mult | :div | :or,
           rhs: Parser.expr(),
           location: Parser.Location.t()
         }

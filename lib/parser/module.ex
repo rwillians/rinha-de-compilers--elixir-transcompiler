@@ -1,13 +1,13 @@
-defmodule Parser.File do
+defmodule Parser.Module do
   @moduledoc """
   Represents the node that represents the AST for an entire file.
   """
 
   @typedoc false
-  @type t :: %Parser.File{
+  @type t :: %Parser.Module{
           name: String.t(),
-          expr: struct,
+          block: Parser.expr(),
           location: Parser.Location.t()
         }
-  defstruct [:name, :expr, :location]
+  defstruct [:name, :block, :location]
 end
