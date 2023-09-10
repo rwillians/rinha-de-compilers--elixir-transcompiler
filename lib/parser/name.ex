@@ -1,9 +1,9 @@
-defmodule Parser.Function.Name do
+defmodule Parser.Name do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.Function.Name{
-          text: String.t(),
+  @type t :: %Parser.Name{
+          text: atom,
           location: Parser.Location.t()
         }
   defstruct [:text, :location]

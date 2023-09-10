@@ -1,38 +1,67 @@
 defmodule Parser do
   @moduledoc false
 
-  @typedoc false
-  @type expr() ::
-    Parse.BinaryOp.t()
-    | Parser.Function.Call.t()
-    | Parser.Function.Reference.t()
-    | Parser.If.t()
-    | Parser.IO.Print.t()
-    | Parser.Literal.Boolean.t()
-    | Parser.Literal.Integer.t()
-    | Parser.Literal.String.t()
-    | Parser.Variable.Reference.t()
+  @doc """
+  Utility for writing parser implementations.
+  """
+  defmacro __using__([{:protocol, protocol}, {:derive, [{:parse_many, 2}]}]) do
+    quote do
+      def parse_many(t, [head | tail]) do
+        with {:ok, value} <- parse(t, head),
+             do: {:ok, [value] ++ parse_many(t, tail)}
+      end
+
+      def parse_many(t, []), do: {:ok, []}
+
+      defoverridable parse_many: 2
+
+      # parse
+      defp p(%_{} = t, value), do: unquote(protocol).parse(t, value)
+      defp p(Any, value), do: unquote(protocol).parse(Any, value)
+      defp p(mod, value) when is_atom(mod), do: unquote(protocol).parse(struct(mod, []), value)
+
+      # parse n (many)
+      defp pn(%_{} = t, values), do: unquote(protocol).parse_many(t, values)
+      defp pn(Any, values), do: unquote(protocol).parse_many(Any, values)
+      defp pn(mod, values) when is_atom(mod), do: unquote(protocol).parse_many(struct(mod, []), values)
+    end
+  end
 
   @doc """
-  A function capable of parsing an entire parse tree.
+  A function that, given a parser, can parse the `value` into a `Parser.Module`.
   """
-  @callback parse(value :: term) :: {:ok, parse_tree :: term} | {:error, term}
+  @spec parse(value :: term, parser :: module) ::
+    {:ok, [Parser.Function.Definition.t()], Parser.Module.t()} | {:error, term}
+
+  def parse(value, parser) do
+    with {:ok, tree} <- apply(parser, :parse, [%Parser.Module{}, value]),
+         {fns, tree} <- split_fns_from_tree(tree),
+         do: {:ok, fns, tree}
+  end
 
   @doc """
-  A function capable of parsing a list of parse trees.
+  Same as `parse/2`, but raises an error if something goes wrong.
   """
-  @callback parse_many([value :: term]) :: {:ok, [parse_tree :: term]} | {:error, term}
+  @spec parse(value :: term, parser :: module) ::
+    {[Parser.Function.Definition.t()], Parser.Module.t()}
+
+  def parse!(value, parser) do
+    {:ok, fns, tree} = parse(value, parser)
+    {fns, tree}
+  end
 
   #
 
-  @doc """
-  Takes a parse tree and extracts function definitions from it, returning a
-  tuple with a list of function definition in the left side and the rest of
-  the tree in the right side.
-  """
-  @spec split_on_fns(node :: struct) :: {[Parser.Function.t()], node :: struct}
+  defp split_fns_from_tree(%Parser.Module{} = tree), do: {extract_fns(tree), exclude_fns(tree)}
 
-  def split_on_fns(tree) do
-    {[], tree}
-  end
+  defp extract_fns(acc \\ [], node)
+  defp extract_fns(acc, %Parser.Module{block: next}), do: extract_fns(acc, next)
+  defp extract_fns(acc, %Parser.Function.Definition{} = node), do: extract_fns([node | acc], node.next)
+  defp extract_fns(acc, %_{next: next}), do: extract_fns(acc, next)
+  defp extract_fns(acc, _), do: :lists.reverse(acc)
+
+  defp exclude_fns(%Parser.Module{block: next} = node), do: %{node | block: exclude_fns(next)}
+  defp exclude_fns(%Parser.Function.Definition{} = node), do: exclude_fns(node.next)
+  defp exclude_fns(%_{next: next} = node), do: %{node | next: exclude_fns(next)}
+  defp exclude_fns(node), do: node
 end
