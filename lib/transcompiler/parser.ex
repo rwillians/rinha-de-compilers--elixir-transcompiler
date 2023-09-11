@@ -22,6 +22,7 @@ defmodule Transcompiler.Parser do
     utf8_string([?a..?z], 1)
     |> concat(utf8_string([?a..?z, ?0..?9, ?_], min: 0))
     |> reduce({Enum, :join, [""]})
+    |> tag(:varname)
     |> label(
       """
       Variable name must follow these rules:
@@ -40,6 +41,7 @@ defmodule Transcompiler.Parser do
     |> ignore(string("="))
     |> optional(ignore(maybe_empty_space))
     |> unwrap_and_tag(parsec(:expr), :value)
+    |> ignore(string(";"))
     |> tag(:let),
     export_metadata: true
 
@@ -53,18 +55,17 @@ defmodule Transcompiler.Parser do
 
   defparsec :if,
     ignore(string("if ("))
-    |> tag(ascii_string([not: ?\)], min: 1), :condition)
+    |> tag(parsec(:expr), :condition)
     |> ignore(string(") "))
     |> tag(parsec(:block), :then)
     |> ignore(string(" else "))
-    |> debug()
     |> tag(parsec(:block), :otherwise)
     |> tag(:if)
 
   defparsecp :block,
     ignore(string("{"))
     |> ignore(maybe_empty_space)
-    |> times(parsec(:expr), min: 0)
+    |> parsec(:expr)
     |> ignore(maybe_empty_space)
     |> ignore(string("}"))
 
@@ -72,8 +73,9 @@ defmodule Transcompiler.Parser do
     tag(parsec(:varname), :callee)
     |> ignore(string("("))
     |> tag(ascii_string([not: ?\)], min: 1), :args)
+    # |> tag(times(parsec(:term) |> optional(ignore(string(",") |> optional(maybe_empty_space))), min: 0), :args)
     |> ignore(string(")"))
-    |> debug()
+    |> tag(:call)
 
   defparsecp :operator,
     choice([
@@ -90,10 +92,12 @@ defmodule Transcompiler.Parser do
       |> tag(parsec(:operator), :op)
       |> ignore(string(" "))
       |> tag(parsec(:term), :lhs)
+      |> tag(:binary_op)
 
   # things that can be tossed around as value
   defparsecp :term,
       choice([
+        parsec(:call),
         parsec(:varname),
         parsec(:literal),
         parsec(:binary_op)
@@ -101,18 +105,16 @@ defmodule Transcompiler.Parser do
 
   defparsecp :expr,
     empty()
-    |> choice(
-      [
-        parsec(:let),
-        parsec(:fn),
-        parsec(:if),
-        parsec(:call),
-        parsec(:varname),
-        parsec(:binary_op),
-        ignore(empty_space),
-        # ascii_string([], min: 0),
-      ]
-    ),
+    |> choice([
+      parsec(:let),
+      parsec(:binary_op),
+      parsec(:if),
+      parsec(:fn),
+      parsec(:call),
+      parsec(:varname),
+      ignore(empty_space),
+      # ascii_string([], min: 0),
+    ]),
     export_metadata: true
 
   @program """
@@ -128,7 +130,13 @@ defmodule Transcompiler.Parser do
   """
 
   def main do
-    parse(@program)
+    {:ok, acc, rest, _, _ ,_} = expr(@program)
+
+    IO.inspect(acc)
+
+    IO.inspect(rest)
+
+    :ok
 
     # fn_call("fib(n)")
     # parse_if("""
