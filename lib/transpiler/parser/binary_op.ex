@@ -1,17 +1,17 @@
-defmodule Parser.BinaryOp do
+defmodule Transpiler.Parser.BinaryOp do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.BinaryOp{
-          lhs: Parser.expr(),
+  @type t :: %Transpiler.Parser.BinaryOp{
+          lhs: Transpiler.Parser.expr(),
           op: :eq | :ne | :lt | :gt | :lte | :gte | :add | :sub | :mult | :div | :or,
-          rhs: Parser.expr(),
-          location: Parser.Location.t()
+          rhs: Transpiler.Parser.expr(),
+          location: Transpiler.Parser.Location.t()
         }
   defstruct [:lhs, :op, :rhs, :location]
 end
 
-defimpl Transpiler.Node, for: Parser.BinaryOp do
+defimpl Transpiler.Node, for: Transpiler.Parser.BinaryOp do
   def transpile(%{op: :lt} = node, mod) do
     {:<, [context: mod, imports: [{1, Kernel}, {2, Kernel}]],
      [

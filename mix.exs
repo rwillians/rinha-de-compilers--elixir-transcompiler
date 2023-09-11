@@ -29,7 +29,8 @@ defmodule Uber.MixProject do
 
   defp deps do
     [
-      {:jason, "~> 1.4.1"}
+      {:jason, "~> 1.4.1"},
+      {:nimble_parsec, "~> 1.3.1"}
     ]
   end
 

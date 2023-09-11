@@ -1,17 +1,17 @@
-defmodule Parser.If do
+defmodule Transpiler.Parser.If do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.If{
-          condition: Parser.expr(),
-          then: Parser.expr(),
-          otherwise: Parser.expr(),
-          location: Parser.Location.t()
+  @type t :: %Transpiler.Parser.If{
+          condition: Transpiler.Parser.expr(),
+          then: Transpiler.Parser.expr(),
+          otherwise: Transpiler.Parser.expr(),
+          location: Transpiler.Parser.Location.t()
         }
   defstruct [:condition, :then, :otherwise, :location]
 end
 
-defimpl Transpiler.Node, for: Parser.If do
+defimpl Transpiler.Node, for: Transpiler.Parser.If do
   def transpile(node, mod) do
     {:if, [context: mod, imports: [{2, Kernel}]],
      [

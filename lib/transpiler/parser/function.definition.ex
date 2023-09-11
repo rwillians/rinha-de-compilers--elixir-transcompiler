@@ -1,18 +1,18 @@
-defmodule Parser.Function.Definition do
+defmodule Transpiler.Parser.Function.Definition do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.Function.Definition{
-          name: Parser.Name.t(),
-          params: [Parser.Function.Parameter.t()],
-          block: Parser.node(),
-          location: Parser.Location.t(),
-          next: Parser.node() | nil
+  @type t :: %Transpiler.Parser.Function.Definition{
+          name: Transpiler.Parser.Name.t(),
+          params: [Transpiler.Parser.Function.Parameter.t()],
+          block: Transpiler.Parser.node(),
+          location: Transpiler.Parser.Location.t(),
+          next: Transpiler.Parser.node() | nil
         }
   defstruct [:name, :params, :block, :location, next: nil]
 end
 
-defimpl Transpiler.Node, for: Parser.Function.Definition do
+defimpl Transpiler.Node, for: Transpiler.Parser.Function.Definition do
   def transpile(node, mod) do
     params =
       for p <- node.params,

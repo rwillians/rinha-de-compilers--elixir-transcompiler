@@ -1,18 +1,18 @@
-defmodule Parser.Module do
+defmodule Transpiler.Parser.Module do
   @moduledoc """
   Represents the node that represents the AST for an entire file.
   """
 
   @typedoc false
-  @type t :: %Parser.Module{
+  @type t :: %Transpiler.Parser.Module{
           name: String.t(),
-          block: Parser.expr(),
-          location: Parser.Location.t()
+          block: Transpiler.Parser.expr(),
+          location: Transpiler.Parser.Location.t()
         }
   defstruct [:name, :block, :location]
 end
 
-defimpl Transpiler.Node, for: Parser.Module do
+defimpl Transpiler.Node, for: Transpiler.Parser.Module do
   def transpile(node, mod) do
     {:def, [context: mod, imports: [{1, Kernel}, {2, Kernel}]],
      [

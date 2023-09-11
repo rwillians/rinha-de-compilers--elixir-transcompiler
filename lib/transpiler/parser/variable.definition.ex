@@ -1,17 +1,17 @@
-defmodule Parser.Variable.Definition do
+defmodule Transpiler.Parser.Variable.Definition do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.Variable.Definition{
-          name: Parser.Name.t(),
-          value: Parser.expr(),
-          location: Parser.Location.t(),
-          next: Parser.expr()
+  @type t :: %Transpiler.Parser.Variable.Definition{
+          name: Transpiler.Parser.Name.t(),
+          value: Transpiler.Parser.expr(),
+          location: Transpiler.Parser.Location.t(),
+          next: Transpiler.Parser.expr()
         }
   defstruct [:name, :value, :location, next: nil]
 end
 
-defimpl Transpiler.Node, for: Parser.Variable.Definition do
+defimpl Transpiler.Node, for: Transpiler.Parser.Variable.Definition do
   def transpile(node, mod) do
     [
       {:=, [],

@@ -2,7 +2,7 @@ defmodule Transpiler do
   @moduledoc """
   Use this when you want your module to be built from transpiling some code.
 
-  The transpiler takes a parse tree made of `Parser.*` modules and transpile
+  The transpiler takes a parse tree made of `Transpiler.Parser.*` modules and transpile
   then to Elixir AST at compile time. That means no interpretation or
   transpiling during runtime. The performance should be the same as if the
   code were written in Elixir.
@@ -13,7 +13,7 @@ defmodule Transpiler do
   - `source`: specifies what is your source and, depending on the type of
     source, you also no to specify where the source can be loaded from;
   - `parser`: A módule with the functions `parser/2` and `parse_many/2` (see
-    `Rinha.Parser` for an example).
+    `Rinha.Transpiler.Parser` for an example).
 
   ### Types of `source`
 
@@ -30,16 +30,16 @@ defmodule Transpiler do
       #        ^     ^ specifies that the AST source is a json
       #        ^
       #        ^ specifies that the source is an AST
-      parser: Rinha.Parser
+      parser: Rinha.Transpiler.Parser
     ```
 
   ### Parsers
 
   The source might be in whatever type and shape, the important part is that
   the chosen parser should be capable of returning a semantic tree using the
-  `Parser.*` structs.
+  `Transpiler.Parser.*` structs.
 
-  See `Rinha.Parser` for an example.
+  See `Rinha.Transpiler.Parser` for an example.
 
   ## Examples
 
@@ -47,7 +47,7 @@ defmodule Transpiler do
       defmodule Rinha.Fib do
         use Transpiler,
           source: {:ast, json: "./rinha/files/fib.json},
-          parser: Rinha.Parser
+          parser: Rinha.Transpiler.Parser
       end
       ```
 
@@ -57,7 +57,7 @@ defmodule Transpiler do
   import Jason, only: [decode!: 2]
   import Keyword, only: [get: 2]
   import Macro, only: [escape: 1]
-  import Parser, only: [parse!: 2]
+  import Transpiler.Parser, only: [parse!: 2]
   import Transpiler.Node, only: [transpile: 2]
 
   @doc false
@@ -73,7 +73,7 @@ defmodule Transpiler do
           Module.eval_quoted(__MODULE__, transpile(f, __MODULE__))
         end
 
-        # tree is a `%Parser.Module{}` struct and  it's transpiled into a
+        # tree is a `%Transpiler.Parser.Module{}` struct and  it's transpiled into a
         # `main/0` function
         Module.eval_quoted(__MODULE__, transpile(tree, __MODULE__))
       end
@@ -89,7 +89,7 @@ defmodule Transpiler do
                   defmodule Rinha.Fib do
                     use Transpiler,
                       source: {:ast, json: ".rinha/files/fib.json"},
-                      parser: Rinha.Parser,
+                      parser: Rinha.Transpiler.Parser,
                       transpiler: Rinha.Transpiler
                   end
                   ```
