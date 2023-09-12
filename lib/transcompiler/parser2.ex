@@ -5,7 +5,6 @@ defmodule Transcompiler.Parser2 do
 
   space = ascii_string([?\s], min: 1)
   blank = ascii_string([?\r, ?\n, ?\s], min: 1)
-  rest = ascii_string([], min: 0)
 
   bool = choice([string("true") |> replace(true), string("false") |> replace(false)])
   int = integer(min: 1)
@@ -25,9 +24,11 @@ defmodule Transcompiler.Parser2 do
 
   defparsecp :operator,
     choice([
-      string("<") |> replace(:lt),
-      string("+") |> replace(:add),
-      string("-") |> replace(:sub)
+      string("==") |> replace(:eq),
+      string("||") |> replace(:or),
+      string("<")  |> replace(:lt),
+      string("+")  |> replace(:add),
+      string("-")  |> replace(:sub)
     ])
     |> lookahead(string(" "))
 
@@ -46,7 +47,7 @@ defmodule Transcompiler.Parser2 do
     ignore(string("fn"))
     |> ignore(space)
     |> ignore(string("("))
-    |> tag(repeat(parsec(:varname) |> optional(string(",") |> optional(blank))), :params)
+    |> tag(repeat(parsec(:varname) |> optional(ignore(string(",") |> optional(blank)))), :params)
     |> ignore(string(")"))
     |> ignore(space)
     |> ignore(string("=>"))
@@ -67,11 +68,11 @@ defmodule Transcompiler.Parser2 do
     |> ignore(string("("))
     |> tag(parsec(:binary_op), :condition)
     |> ignore(string(")"))
-    |> ignore(space)
+    |> ignore(blank)
     |> tag(parsec(:block), :then)
-    |> ignore(space)
+    |> ignore(blank)
     |> ignore(string("else"))
-    |> ignore(space)
+    |> ignore(blank)
     |> tag(parsec(:block), :otherwise)
     |> tag(:if)
 
@@ -79,10 +80,7 @@ defmodule Transcompiler.Parser2 do
     empty()
     |> unwrap_and_tag(parsec(:varname), :fn)
     |> ignore(string("("))
-    |> debug()
-    # |> tag(ascii_string([not: ?\)], min: 1), :args)
-    |> tag(choice([parsec(:binary_op), parsec(:term)]), :args)
-    # |> tag(repeat(parsec(:term) |> optional(string(",") |> optional(space))), :args)
+    |> tag(repeat(choice([parsec(:binary_op), parsec(:term)]) |> optional(ignore(string(",") |> optional(space)))), :args)
     |> ignore(string(")"))
     |> tag(:call)
 
@@ -96,7 +94,6 @@ defmodule Transcompiler.Parser2 do
 
   defcombinatorp :term,
     choice([
-      # parsec(:binary_op)
       parsec(:call),
       unwrap_and_tag(parsec(:varname), :varname),
       parsec(:literal),
@@ -116,19 +113,35 @@ defmodule Transcompiler.Parser2 do
 
   defparsec :parse, repeat(parsec(:expr))
 
-  @program """
-  let fib = fn (n) => {
-    if (n < 2) {
-      n
-    } else {
-      fib(n - 1) + fib(n - 2)
-    }
-  };
+  def test_fib do
+    parse("""
+    let fib = fn (n) => {
+      if (n < 2) {
+        n
+      } else {
+        fib(n - 1) + fib(n - 2)
+      }
+    };
 
-  print(fib(10))
-  """
+    print(fib(10))
+    """)
+  end
 
-  def main do
-    parse(@program)
+  def test_combination do
+    parse("""
+    let combination = fn (n, k) => {
+      let a = k == 0;
+      let b = k == n;
+      if (a || b)
+      {
+          1
+      }
+      else {
+          combination(n - 1, k - 1) + combination(n - 1, k)
+      }
+    };
+
+    print(combination(10, 2))
+    """)
   end
 end
