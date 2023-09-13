@@ -4,5 +4,8 @@
       "path": ".",
       "name": "rinha-de-compilers"
     }
-  ]
+  ],
+  "settings": {
+    "editor.rulers": [80, 100, 120]
+  }
 }

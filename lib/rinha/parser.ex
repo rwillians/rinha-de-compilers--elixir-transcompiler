@@ -1,412 +1,294 @@
-defprotocol Rinha.Parser do
+defmodule Rinha.Parser do
   @moduledoc false
 
-  @fallback_to_any true
+  import NimbleParsec
 
-  @doc """
-  A function capable of parsing the given value into a struct specific for a
-  node type.
-  """
-  @spec parse(node :: t, value :: map) :: {:ok, node :: t} | {:error, term}
+  space = ascii_char([?\s])
+  blank = ascii_char([?\r, ?\n, ?\s, ?\t])
+  comma = string(",")
+  separator = comma |> optional(space)
 
-  def parse(node \\ Any, value)
+  defparsec :bool,
+            choice([
+              string("true") |> replace(true),
+              string("false") |> replace(false)
+            ])
+            |> unwrap_and_tag(:boolean)
 
-  @doc """
-  A function capable of parsing many values of the given struct.
-  """
-  @spec parse_many(node :: t, [value :: map]) :: {:ok, [node :: t]} | {:error, term}
+  defparsec :int,
+            choice([
+              string("-")
+              |> concat(integer(min: 1))
+              |> post_traverse(:to_negative_int),
+              integer(min: 1)
+            ])
+            |> unwrap_and_tag(:integer)
 
-  def parse_many(node \\ Any, values)
-end
+  defparsec :str,
+            ignore(string(~S(")))
+            |> ascii_string([not: ?"], min: 0)
+            |> ignore(string(~S(")))
+            |> unwrap_and_tag(:string)
 
-###############################################################################
-#                               ANY / FALLBACK                                #
-###############################################################################
+  defparsecp :tuple,
+             ignore(string("("))
+             |> ignore(optional(space))
+             |> unwrap_and_tag(choice([parsec(:binary_op), parsec(:term)]), :first)
+             |> ignore(optional(space))
+             |> ignore(string(","))
+             |> ignore(optional(space))
+             |> unwrap_and_tag(choice([parsec(:binary_op), parsec(:term)]), :second)
+             |> ignore(optional(space))
+             |> ignore(string(")"))
+             |> tag(:tuple)
 
-defimpl Rinha.Parser, for: Any do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
+  defparsecp :file,
+             repeat(parsec(:expr))
+             |> tag(:file)
 
-  def parse(Any, %{kind: "Let", value: %{kind: "Function"}} = node), do: p(Parser.Function.Definition, node)
-  def parse(Any, %{kind: "Let"} = node), do: p(Parser.Variable.Definition, node)
-  def parse(Any, %{kind: "If"} = node), do: p(Parser.If, node)
-  def parse(Any, %{kind: "Binary", op: _} = node), do: p(Parser.BinaryOp, node)
-  def parse(Any, %{kind: "Var"} = node), do: p(Parser.Variable.Reference, node)
-  def parse(Any, %{kind: "Int"} = node), do: p(Parser.Literal.Integer, node)
-  def parse(Any, %{kind: "Str"} = node), do: p(Parser.Literal.String, node)
-  def parse(Any, %{kind: "Bool"} = node), do: p(Parser.Literal.Boolean, node)
-  def parse(Any, %{kind: "Call"} = node), do: p(Parser.Function.Call, node)
-  def parse(Any, %{kind: "Print"} = node), do: p(Parser.IO.Print, node)
-end
+  defparsecp :let,
+             ignore(string("let"))
+             |> ignore(times(space, min: 1))
+             |> parsec(:var)
+             |> ignore(times(space, min: 1))
+             |> ignore(string("="))
+             |> ignore(times(space, min: 1))
+             |> unwrap_and_tag(parsec(:expr), :value)
+             |> ignore(optional(string(";")))
+             |> tag(:let)
 
-###############################################################################
-#                                   BASICS                                    #
-###############################################################################
+  defparsecp :lambda,
+             ignore(string("fn"))
+             |> ignore(repeat(space))
+             |> ignore(string("("))
+             |> tag(repeat(parsec(:var) |> optional(ignore(separator))), :params)
+             |> ignore(string(")"))
+             |> ignore(repeat(space))
+             |> ignore(string("=>"))
+             |> ignore(repeat(space))
+             |> tag(parsec(:block), :block)
+             |> tag(:lambda)
 
-#
-#   MODULE
-#
+  defparsecp :var,
+             utf8_string([?a..?z], 1)
+             |> concat(utf8_string([?a..?z, ?0..?9, ?_], min: 0))
+             |> reduce({Enum, :join, [""]})
+             |> unwrap_and_tag(:var)
 
-defimpl Rinha.Parser, for: Parser.Module do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
+  defparsecp :block,
+             ignore(string("{"))
+             |> ignore(repeat(blank))
+             |> repeat(parsec(:expr))
+             |> ignore(repeat(blank))
+             |> ignore(string("}"))
 
-  def parse(struct, %{
-        name: <<_, _::binary>> = name,
-        expression: block,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, block} <- p(Any, block) do
-      {:ok, %{struct | name: name, block: block, location: location}}
-    end
+  defparsecp :if,
+             ignore(string("if"))
+             |> ignore(repeat(space))
+             |> ignore(string("("))
+             |> unwrap_and_tag(choice([parsec(:binary_op), parsec(:term)]), :condition)
+             |> ignore(string(")"))
+             |> ignore(repeat(blank))
+             |> tag(parsec(:block), :then)
+             |> ignore(repeat(blank))
+             |> tag(choice([ignore(string("else")) |> ignore(blank) |> parsec(:block), empty() |> replace(nil)]), :otherwise)
+             |> tag(:if)
+
+  defparsecp :operator,
+             choice([
+               string("+") |> replace(:add),
+               string("-") |> replace(:sub),
+               string("*") |> replace(:mul),
+               string("/") |> replace(:div),
+               string("%") |> replace(:rem),
+               string("==") |> replace(:eq),
+               string("!=") |> replace(:neq),
+               string("<=") |> replace(:lte),
+               string("<") |> replace(:lt),
+               string(">=") |> replace(:gte),
+               string(">") |> replace(:gt),
+               string("&&") |> replace(:and),
+               string("||") |> replace(:or)
+             ])
+             |> lookahead(space)
+
+  defparsecp :binary_op,
+             empty()
+             |> unwrap_and_tag(parsec(:term), :lhs)
+             |> ignore(times(space, min: 1))
+             |> unwrap_and_tag(parsec(:operator), :op)
+             |> ignore(times(space, min: 1))
+             |> unwrap_and_tag(parsec(:term), :rhs)
+             |> tag(:binary_op)
+
+  defparsecp :wrapped_binary_op,
+             ignore(string("("))
+             |> ignore(repeat(blank))
+             |> parsec(:binary_op)
+             |> ignore(repeat(blank))
+             |> ignore(string(")"))
+
+  defparsecp :call,
+             tag(parsec(:var), :callee)
+             |> ignore(times(space, min: 0))
+             |> ignore(string("("))
+             |> tag(repeat(choice([parsec(:binary_op), parsec(:term)]) |> ignore(optional(separator))), :args)
+             |> ignore(string(")"))
+             |> tag(:call)
+
+  defparsecp :term,
+             choice([
+               parsec(:wrapped_binary_op),
+               parsec(:tuple),
+               parsec(:bool),
+               parsec(:int),
+               parsec(:str),
+               parsec(:lambda),
+               parsec(:call),
+               parsec(:var)
+             ])
+
+  defparsecp :expr,
+             choice([
+               parsec(:let),
+               parsec(:if),
+               parsec(:lambda),
+               parsec(:binary_op),
+               parsec(:term)
+             ])
+             |> ignore(repeat(blank))
+
+  @doc false
+  @spec parse(binary, filename :: String.t()) ::
+          {:ok, Transcompiler.File.t()}
+          | {:error, term}
+
+  def parse(program, filename) do
+    with {:ok, [{:file, exprs}], "", _, _, _} <- file(program),
+         do: {:ok, to_common_ast({:file, exprs}, %{filename: filename})}
   end
-end
 
-#
-#   LOCATION
-#
+  #
+  # HELPERS
+  #
 
-defimpl Rinha.Parser, for: Parser.Location do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
+  defp to_negative_int(_rest, [n, "-"], ctx, _line, _offset), do: {[n * -1], ctx}
 
-  def parse(location, %{
-        filename: <<_, _::binary>> = name,
-        start: char_start,
-        end: char_end
-      }) do
-    {:ok, %{location | filename: name, start: char_start, end: char_end}}
+  #
+  # TO COMMON AST STRUCTS
+  #
+
+  defp to_common_ast({:file, exprs}, ctx) do
+    %Transcompiler.File{
+      name: ctx.filename,
+      block: Enum.map(exprs, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-#
-#   NAME
-#
+  defp to_common_ast({:let, [{:var, name}, {:value, {:lambda, _} = lambda}]}, ctx) do
+    lambda = to_common_ast(lambda, ctx)
 
-defimpl Rinha.Parser, for: Parser.Name do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(struct, %{
-        text: text,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{struct | text: String.to_atom(text), location: location}}
-    end
+    %Transcompiler.Function{
+      name: String.to_atom(name),
+      params: lambda.params,
+      block: lambda.block,
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-###############################################################################
-#                                  FUNCTIONS                                  #
-###############################################################################
+  defp to_common_ast({:let, [{:var, name}, {:value, value}]}, ctx) do
+    location = %Transcompiler.File{name: ctx.filename}
 
-#
-#   PARAMETER
-#
-
-defimpl Rinha.Parser, for: Parser.Function.Parameter do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(struct, %{
-        text: name,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{struct | name: String.to_atom(name), location: location}}
-    end
+    %Transcompiler.Let{
+      var: %Transcompiler.Variable{name: String.to_atom(name), location: location},
+      value: to_common_ast(value, ctx),
+      location: location
+    }
   end
-end
 
-#
-#   DEFINITION
-#
-
-defimpl Rinha.Parser, for: Parser.Function.Definition do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(definition, %{
-        kind: "Let",
-        name: name,
-        value: %{
-          kind: "Function",
-          parameters: params,
-          value: block,
-          location: location
-        },
-        next: next
-      }) do
-    with {:ok, name} <- p(Parser.Name, name),
-         {:ok, location} <- p(Parser.Location, location),
-         {:ok, params} <- pn(Parser.Function.Parameter, params),
-         {:ok, block} <- p(Any, block),
-         {:ok, next} <- p(Any, next) do
-      {:ok, %{definition | name: name, params: params, block: block, location: location, next: next}}
-    end
+  defp to_common_ast({:lambda, [{:params, params}, {:block, exprs}]}, ctx) do
+    %Transcompiler.Lambda{
+      params: Enum.map(params, &to_common_ast(&1, ctx)),
+      block: Enum.map(exprs, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-#
-#   REFERENCE
-#
-
-defimpl Rinha.Parser, for: Parser.Function.Reference do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(ref, %{
-        kind: "Var",
-        text: name,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{ref | name: String.to_atom(name), location: location}}
-    end
+  defp to_common_ast({:call, [{:callee, [{:var, name}]}, {:args, args}]}, ctx) do
+    %Transcompiler.Call{
+      callee: String.to_atom(name),
+      args: Enum.map(args, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-#
-#   CALL
-#
-
-defimpl Rinha.Parser, for: Parser.Function.Call do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(call, %{
-        kind: "Call",
-        callee: callee,
-        arguments: args,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, callee} <- p(Parser.Function.Reference, callee),
-         {:ok, args} <- pn(Any, args) do
-      {:ok, %{call | callee: callee, args: args, location: location}}
-    end
+  defp to_common_ast({:if, [{:condition, condition}, {:then, then}, {:otherwise, otherwise}]}, ctx) do
+    %Transcompiler.If{
+      condition: to_common_ast(condition, ctx),
+      then: Enum.map(then, &to_common_ast(&1, ctx)),
+      otherwise: Enum.map(otherwise, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-###############################################################################
-#                                FLOW CONTROL                                 #
-###############################################################################
+  defp to_common_ast({:binary_op, [{:lhs, lhs}, {:op, op}, {:rhs, rhs}]}, ctx) do
+    fields = %{
+      lhs: to_common_ast(lhs, ctx),
+      rhs: to_common_ast(rhs, ctx),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
 
-#
-#   IF
-#
-
-defimpl Rinha.Parser, for: Parser.If do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(struct, %{
-        kind: "If",
-        condition: condition,
-        then: then,
-        otherwise: otherwise,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, condition} <- p(Parser.BinaryOp, condition),
-         {:ok, then} <- p(Any, then),
-         {:ok, otherwise} <- p(Any, otherwise) do
-      {:ok,
-       %{struct | condition: condition, then: then, otherwise: otherwise, location: location}}
-    end
-  end
-end
-
-###############################################################################
-#                              BINARY OPERATIONS                              #
-###############################################################################
-
-defimpl Rinha.Parser, for: Parser.BinaryOp do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  @mapping %{
-    "Eq" => :eq,
-    "Ne" => :ne,
-    "Lt" => :lt,
-    "Gt" => :gt,
-    "Lte" => :lte,
-    "Gte" => :gte,
-    "Add" => :add,
-    "Sub" => :sub,
-    "Div" => :div,
-    "Or" => :or
-  }
-
-  @keys Map.keys(@mapping)
-
-  def parse(binary_op, %{
-        kind: "Binary",
-        lhs: lhs,
-        op: op,
-        rhs: rhs,
-        location: location
-      })
-      when op in @keys do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, op} <- cast(op),
-         {:ok, lhs} <- p(Any, lhs),
-         {:ok, rhs} <- p(Any, rhs) do
-      {:ok, %{binary_op | lhs: lhs, op: op, rhs: rhs, location: location}}
+    case op do
+      :add -> struct(Transcompiler.BinaryOp.Add, fields)
+      :sub -> struct(Transcompiler.BinaryOp.Sub, fields)
+      :mul -> struct(Transcompiler.BinaryOp.Mul, fields)
+      :div -> struct(Transcompiler.BinaryOp.Div, fields)
+      :rem -> struct(Transcompiler.BinaryOp.Rem, fields)
+      :eq  -> struct(Transcompiler.BinaryOp.Eq, fields)
+      :neq -> struct(Transcompiler.BinaryOp.Neq, fields)
+      :lt  -> struct(Transcompiler.BinaryOp.Lt, fields)
+      :gt  -> struct(Transcompiler.BinaryOp.Gt, fields)
+      :lte -> struct(Transcompiler.BinaryOp.Lte, fields)
+      :gte -> struct(Transcompiler.BinaryOp.Gte, fields)
+      :and -> struct(Transcompiler.BinaryOp.And, fields)
+      :or  -> struct(Transcompiler.BinaryOp.Or, fields)
     end
   end
 
-  for {str, atom} <- @mapping do
-    def cast(unquote(str)), do: {:ok, unquote(atom)}
+  defp to_common_ast({:var, name}, ctx) do
+    %Transcompiler.Variable{
+      name: String.to_atom(name),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-###############################################################################
-#                                  VARIABLES                                  #
-###############################################################################
-
-#
-#   DEFINITION
-#
-
-defimpl Rinha.Parser, for: Parser.Variable.Definition do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(var, %{
-        kind: "Let",
-        name: name,
-        value: value,
-        location: location,
-        next: next
-      }) do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, name} <- p(Parser.Name, name),
-         {:ok, value} <- p(Any, value),
-         {:ok, next} <- p(Any, next) do
-      {:ok, %{var | name: name, value: value, location: location, next: next}}
-    end
+  defp to_common_ast({:integer, value}, ctx) do
+    %Transcompiler.Integer{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-#
-#   REFERENCE
-#
-
-defimpl Rinha.Parser, for: Parser.Variable.Reference do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(ref, %{
-        kind: "Var",
-        text: name,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{ref | name: String.to_atom(name), location: location}}
-    end
+  defp to_common_ast({:boolean, value}, ctx) do
+    %Transcompiler.Boolean{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-###############################################################################
-#                                  LITERALS                                   #
-###############################################################################
-
-#
-#   BOOLEAN
-#
-
-defimpl Rinha.Parser, for: Parser.Literal.Boolean do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(literal, %{
-        kind: "Bool",
-        value: value,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{literal | value: value, location: location}}
-    end
+  defp to_common_ast({:string, value}, ctx) do
+    %Transcompiler.String{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
-end
 
-#
-#   INTEGER
-#
-
-defimpl Rinha.Parser, for: Parser.Literal.Integer do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(literal, %{
-        kind: "Int",
-        value: value,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{literal | value: value, location: location}}
-    end
-  end
-end
-
-#
-#   STRING
-#
-
-defimpl Rinha.Parser, for: Parser.Literal.String do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(literal, %{
-        kind: "Str",
-        value: value,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location) do
-      {:ok, %{literal | value: value, location: location}}
-    end
-  end
-end
-
-###############################################################################
-#                                      IO                                     #
-###############################################################################
-
-#
-#   PRINT
-#
-
-defimpl Rinha.Parser, for: Parser.IO.Print do
-  use Parser,
-    protocol: Rinha.Parser,
-    derive: [parse_many: 2]
-
-  def parse(print, %{
-        kind: "Print",
-        value: value,
-        location: location
-      }) do
-    with {:ok, location} <- p(Parser.Location, location),
-         {:ok, value} <- p(Any, value) do
-      {:ok, %{print | value: value, location: location}}
-    end
+  defp to_common_ast({:tuple, [{:first, first}, {:second, second}]}, ctx) do
+    %Transcompiler.Tuple{
+      first: to_common_ast(first, ctx),
+      second: to_common_ast(second, ctx),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
   end
 end

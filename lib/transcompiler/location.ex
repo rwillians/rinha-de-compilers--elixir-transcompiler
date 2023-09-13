@@ -1,10 +1,8 @@
-defmodule Parser.Location do
-  @moduledoc """
-  Struct representing the location of a node.
-  """
+defmodule Transcompiler.Location do
+  @moduledoc false
 
   @typedoc false
-  @type t :: %Parser.Location{
+  @type t :: %Transcompiler.Location{
           filename: String.t(),
           start: pos_integer,
           end: pos_integer
