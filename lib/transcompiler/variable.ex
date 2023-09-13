@@ -10,7 +10,5 @@ defmodule Transcompiler.Variable do
 end
 
 defimpl Transcompiler.Transpiler, for: Transcompiler.Variable do
-  def to_elixir_ast(ast, mod) do
-    {ast.name, [], mod}
-  end
+  def to_elixir_ast(ast, env), do: {ast.name, [], env}
 end

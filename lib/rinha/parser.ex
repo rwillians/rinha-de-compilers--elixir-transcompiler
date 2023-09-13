@@ -175,13 +175,24 @@ defmodule Rinha.Parser do
   defp to_negative_int(_rest, [n, "-"], ctx, _line, _offset), do: {[n * -1], ctx}
 
   #
-  # TO STRUCTS
+  # TO COMMON AST STRUCTS
   #
 
   defp to_common_ast({:file, exprs}, ctx) do
     %Transcompiler.File{
       name: ctx.filename,
       block: Enum.map(exprs, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
+    }
+  end
+
+  defp to_common_ast({:let, [{:var, name}, {:value, {:lambda, _} = lambda}]}, ctx) do
+    lambda = to_common_ast(lambda, ctx)
+
+    %Transcompiler.Function{
+      name: String.to_atom(name),
+      params: lambda.params,
+      block: lambda.block,
       location: %Transcompiler.File{name: ctx.filename}
     }
   end

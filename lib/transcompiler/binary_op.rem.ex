@@ -9,3 +9,13 @@ defmodule Transcompiler.BinaryOp.Rem do
         }
   defstruct [:lhs, :rhs, location: nil]
 end
+
+defimpl Transcompiler.Transpiler, for: Transcompiler.BinaryOp.Rem do
+  def to_elixir_ast(ast, env) do
+    {:rem, [context: env, imports: [{2, Kernel}]],
+     [
+       Transcompiler.Transpiler.to_elixir_ast(ast.lhs, env),
+       Transcompiler.Transpiler.to_elixir_ast(ast.rhs, env)
+     ]}
+  end
+end

@@ -9,3 +9,12 @@ defmodule Transcompiler.BinaryOp.Gte do
         }
   defstruct [:lhs, :rhs, location: nil]
 end
+
+defimpl Transcompiler.Transpiler, for: Transcompiler.BinaryOp.Gte do
+  def to_elixir_ast(ast, env) do
+    {:>=, [context: env, imports: [{2, Kernel}]], [
+      Transcompiler.Transpiler.to_elixir_ast(ast.lhs, env),
+      Transcompiler.Transpiler.to_elixir_ast(ast.rhs, env),
+    ]}
+  end
+end

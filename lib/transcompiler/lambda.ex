@@ -11,7 +11,3 @@ defmodule Transcompiler.Lambda do
         }
   defstruct [:params, :block, location: nil]
 end
-
-defimpl Transcompiler.Transpiler, for: Transcompiler.Lambda do
-  def to_elixir_ast(ast, _env), do: ast.value
-end
