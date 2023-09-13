@@ -218,6 +218,7 @@ Parsing a program results in a generic AST like this:
 
 ```elixir
 # "let a = k == 0;"
+
 %Transcompiler.File{
   name: "foo.rinha",
   block: [
@@ -239,6 +240,7 @@ There's a total of 27 types of tokens that can be composed into that generic AST
 
 ```elixir
 # lib/transcompiler/transpiler.ex
+
 defprotocol Transcompiler.Transpiler do
   @spec to_elixir_ast(ast :: struct, env :: module) :: Macro.t()
   def to_elixir_ast(ast, env)
@@ -246,7 +248,8 @@ end
 ```
 
 ```elixir
-lib/transcompiler/binary_op.add.ex
+# lib/transcompiler/binary_op.add.ex
+
 defimpl Transcompiler.Transpiler, for: Transcompiler.BinaryOp.Add do
   def to_elixir_ast(ast, env) do
     {:+, [context: env, imports: [{1, Kernel}, {2, Kernel}]], [
@@ -295,7 +298,7 @@ defmodule Transcompiler do
 end
 ```
 
-And that's it. Now the `.rinha` code is Elixir code; get's compiled as Elixir code and runs as beam-vm's code using ERTS (Erlang's Runtime System).
+And that's it. Now the `.rinha` code is Elixir code; get's compiled as Elixir code; and runs as any Elixir code.
 
 
 ## Where to find me
