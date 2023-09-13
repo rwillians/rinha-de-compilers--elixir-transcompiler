@@ -6,78 +6,93 @@
 
 ---
 
-A idea aqui é fazer um transpilador em elixir o qual, ao compilar o projeto em Elixir, carrega a AST genérica da rinha e a compila como um módulo Elixir.
+# A Source-to-Source Transcompiler
 
-Caso a AST genérica represente (ou contenha) código proceduram (um script, código executado fora de uma função), tal árvore sintática será transpilada dentro de uma função `main/0` dentro do módulo para onde a AST está sendo transpilada e compilada.
+The core idea here is to use Elixir (at compile time) to parse a `.rinha` program, transpile it to Elixir AST and then compile it as an Elixir program.
 
-Dessaforma, não há interpretação da AST durante runtime. O Transpiling acontece em compile-time, logo, a performance em runtime é a mesma comparada ao mesmo código escrito diretamente em Elixir.
+## How to use it?
 
-> **Warning**
-> A implementação do transpiler não é completa. Ela contempla apenas o mínimo necessário para rodar os cenários da rinha.
-
-
-## Uso
-
-É necessário criar um módulo em Elixir dentro do qual a um arquivo de AST genérica (aqueles em JSON) será transpilado. Não é permitido transpilar mais de 1 arquivo de AST por módulo.
+You just need to create a module where the your transpiled `rinha` program will live. To transpcompile the code, all you gotta do is use the `Transcompile` module:
 
 ```elixir
 defmodule Rinha.Fib do
-  use Transpiler,
-    source: {:ast, json: ".rinha/files/fib.json"},
+  use Transcompiler,
+    source: {:file, path: ".rinha/files/fib.rinha"},
     parser: Rinha.Parser
 end
+
 ```
 
-As funções definidas no AST genérica serão compiladas como funções públicas dentro do módulo. Então, supondo que na AST genérica há a definição de uma função chamada `fib/1`, tal função poderá ser invocada como `Rinha.Fib.fin/1`, onde `Rinha.Fib` é o nome do módulo dentro do qual a AST será transpilada e compilada.
+All functions defined in your `.rinha` program file will be extracted from the syntax tree then transpiled as Elixir's `def` functions (public module functions). That's necessary to allow for recursive functions. As for the rest of the tree, all script-like procedural code will be transpiled into a `main/0` public function in the same module.
 
 
-## Como rodar
+## Running it
 
 > **Note**
-> Pressuponho que você tenha `asdf-vm` instalado (pois  se não tem, deveria viu 👀 -- é tipo um nvm, mas pra tudo quanto é linguagem e ferramentas).
+> I assume you have `asdf-vm` installed (because you should 👀 -- it's like nvm, but for anything basically).
 
-1.  Clona o repo (uso o repo da rinha como submodule):
+1.  Clone the repo (yes, that `--recursive` flag is important):
 
     ```sh
     git clone --recursive git@github.com:rwillians/rinha-de-compiladores.git
     ```
 
-2.  Instala Elixir e Erlang nas versões definidas no arquivo `.tool-versions`:
+2.  Install Elixir and Erlang with the versions specified in the file `.tool-versions`:
 
     ```sh
     asdf install
     ```
 
-3.  Instala as dependências:
+3.  Install dependencies:
 
     ```sh
     mix deps.get
     ```
 
-4.  Sobe o REPL:
+4.  Compile dependencies (shouldn't be timmed):
+
+    ```sh
+    mix deps.compile
+    ```
+
+5.  Compile the main source code (that's the one you want to time):
+
+    ```sh
+    mix compile
+    ```
+
+6.  run the REPL:
 
     ```sh
     iex -S mix
     ```
 
-5.  Roda o programa:
+7.  Call whatever function you'd like to see working:
 
     ```elixir
     Rinha.Fib.main()
     ```
 
-    Se preferir, pode rodar `fib` diretamente:
+    Note that functions specified in the program are public functions, meaning you could call `fib/1` from the REPL as well:
 
     ```elixir
     Rinha.Fib.fib(15)
     ```
 
+    You can also play with the other test programs:
 
-## Sobre mim
+    ```elixir
+    Rinha.Combination.main()
+    ```
 
-Pago meus boletos fazendo programa faz mais de 10 anos. Manjo pouquíssimo de compiladores, transpiladores, parsers, lexers, grammar e etc mas tamo aí aprendendo. Sou especialista em fazer carinho em gatinhos 🐈, mestre em diminuir tempo de vida de plantas -- até cactos --, arranho uns acordes no violão e às vezes até arrisco cantar, eterno pianista aprediz -- sério, aprendiz mesmo, sei quase nada kkkkry --, faixa branca em Ninjutso -- sim, isso existe, não é só coisa de Naruto -- e tô sempre com One Piece em dia.
+    ```elixir
+    Rinha.Sum.main()
+    ```
 
-|      Onde | Link                                                 |
+
+## Where to find me
+
+|      Name | Link                                                 |
 |----------:|:-----------------------------------------------------|
 | 𝕏 Twitter | [@rwillians_](https://twitter.com/rwillians_)        |
 |  LinkedIn | [@rwillians](https://www.linkedin.com/in/rwillians/) |
