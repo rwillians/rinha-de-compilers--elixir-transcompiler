@@ -182,7 +182,7 @@ defmodule Rinha.Parser do
     %Transcompiler.File{
       name: ctx.filename,
       block: Enum.map(exprs, &to_common_ast(&1, ctx)),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -193,7 +193,7 @@ defmodule Rinha.Parser do
       name: String.to_atom(name),
       params: lambda.params,
       block: lambda.block,
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -211,7 +211,7 @@ defmodule Rinha.Parser do
     %Transcompiler.Lambda{
       params: Enum.map(params, &to_common_ast(&1, ctx)),
       block: Enum.map(exprs, &to_common_ast(&1, ctx)),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -219,7 +219,7 @@ defmodule Rinha.Parser do
     %Transcompiler.Call{
       callee: String.to_atom(name),
       args: Enum.map(args, &to_common_ast(&1, ctx)),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -228,7 +228,7 @@ defmodule Rinha.Parser do
       condition: to_common_ast(condition, ctx),
       then: Enum.map(then, &to_common_ast(&1, ctx)),
       otherwise: Enum.map(otherwise, &to_common_ast(&1, ctx)),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -236,7 +236,7 @@ defmodule Rinha.Parser do
     fields = %{
       lhs: to_common_ast(lhs, ctx),
       rhs: to_common_ast(rhs, ctx),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
 
     case op do
@@ -259,28 +259,28 @@ defmodule Rinha.Parser do
   defp to_common_ast({:var, name}, ctx) do
     %Transcompiler.Variable{
       name: String.to_atom(name),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
   defp to_common_ast({:integer, value}, ctx) do
     %Transcompiler.Integer{
       value: value,
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
   defp to_common_ast({:boolean, value}, ctx) do
     %Transcompiler.Boolean{
       value: value,
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
   defp to_common_ast({:string, value}, ctx) do
     %Transcompiler.String{
       value: value,
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 
@@ -288,7 +288,7 @@ defmodule Rinha.Parser do
     %Transcompiler.Tuple{
       first: to_common_ast(first, ctx),
       second: to_common_ast(second, ctx),
-      location: %Transcompiler.File{name: ctx.filename}
+      location: %Transcompiler.Location{filename: ctx.filename}
     }
   end
 end
