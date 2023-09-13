@@ -183,6 +183,8 @@ defmodule Rinha.Parser do
       name: ctx.filename,
       block: Enum.map(exprs, &to_common_ast(&1, ctx)),
       location: %Transcompiler.Location{filename: ctx.filename}
+      #                       ^ TODO:   make location aware of the line number
+      #                                 and character offset.
     }
   end
 

@@ -98,3 +98,10 @@ All functions defined in your `.rinha` program file will be extracted from the s
 |  LinkedIn | [@rwillians](https://www.linkedin.com/in/rwillians/) |
 |    GitHub | [@rwillians](https://github.com/rwillians)           |
 |    Resume | [rwillians.com](https://rwillians.com/resume)        |
+
+
+## What's next?
+
+- [ ] `#debug` add line number and character offset to `Transcompiler.Location` on all tokens;
+- [ ] `#improvement` support functions to be declared anywhere in the file, not only at the root scope;
+- [ ] `#dx` `#debug` provide nicer error messages when parsing fails.

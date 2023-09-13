@@ -15,6 +15,12 @@ defimpl Transcompiler.Transpiler, for: Transcompiler.File do
     fns = Enum.filter(ast.block, &(&1.__struct__ == Transcompiler.Function))
     tokens = Enum.reject(ast.block, &(&1.__struct__ == Transcompiler.Function))
 
+    # KNOWN ISSUE / TODO:   if a function is defined elsewhere in the file, for
+    #                       example inside another function or inside an `if`,
+    #                       then they won't get created -- will likely cause a
+    #                       compile error or worst, a runtime error.
+
+
     block =
       Enum.map(fns, &Transcompiler.Transpiler.to_elixir_ast(&1, env)) ++
         [
