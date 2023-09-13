@@ -57,7 +57,7 @@ defmodule Rinha.Parser do
              |> ignore(optional(string(";")))
              |> tag(:let)
 
-  defparsecp :function,
+  defparsecp :lambda,
              ignore(string("fn"))
              |> ignore(repeat(space))
              |> ignore(string("("))
@@ -67,7 +67,7 @@ defmodule Rinha.Parser do
              |> ignore(string("=>"))
              |> ignore(repeat(space))
              |> tag(parsec(:block), :block)
-             |> tag(:function)
+             |> tag(:lambda)
 
   defparsecp :var,
              utf8_string([?a..?z], 1)
@@ -121,12 +121,12 @@ defmodule Rinha.Parser do
              |> unwrap_and_tag(parsec(:term), :rhs)
              |> tag(:binary_op)
 
-  wrapped_binary_op =
-    ignore(string("("))
-    |> ignore(repeat(blank))
-    |> parsec(:binary_op)
-    |> ignore(repeat(blank))
-    |> ignore(string(")"))
+  defparsecp :wrapped_binary_op,
+             ignore(string("("))
+             |> ignore(repeat(blank))
+             |> parsec(:binary_op)
+             |> ignore(repeat(blank))
+             |> ignore(string(")"))
 
   defparsecp :call,
              tag(parsec(:var), :callee)
@@ -138,13 +138,12 @@ defmodule Rinha.Parser do
 
   defparsecp :term,
              choice([
+               parsec(:wrapped_binary_op),
                parsec(:tuple),
-               wrapped_binary_op,
                parsec(:bool),
                parsec(:int),
                parsec(:str),
-               # parsec(:tuple),
-               parsec(:function),
+               parsec(:lambda),
                parsec(:call),
                parsec(:var)
              ])
@@ -153,20 +152,20 @@ defmodule Rinha.Parser do
              choice([
                parsec(:let),
                parsec(:if),
-               parsec(:function),
+               parsec(:lambda),
                parsec(:binary_op),
                parsec(:term)
              ])
              |> ignore(repeat(blank))
 
   @doc false
-  @spec parse(filename :: String.t(), binary) ::
-          {:ok, Transcompiler.AST.File.t()}
+  @spec parse(binary, filename :: String.t()) ::
+          {:ok, Transcompiler.File.t()}
           | {:error, term}
 
-  def parse(filename, program) do
+  def parse(program, filename) do
     with {:ok, [{:file, exprs}], "", _, _, _} <- file(program),
-         do: {:ok, to_ast({:file, exprs}, %{filename: filename})}
+         do: {:ok, to_common_ast({:file, exprs}, %{filename: filename})}
   end
 
   #
@@ -179,77 +178,89 @@ defmodule Rinha.Parser do
   # TO STRUCTS
   #
 
-  defp to_ast({:file, exprs}, ctx) do
-    %Transcompiler.AST.File{
-      block: Enum.map(exprs, &to_ast(&1, ctx))
+  defp to_common_ast({:file, exprs}, ctx) do
+    %Transcompiler.File{
+      name: ctx.filename,
+      block: Enum.map(exprs, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:let, [{:var, name}, {:value, value}]}, ctx) do
-    %Transcompiler.AST.Let{
+  defp to_common_ast({:let, [{:var, name}, {:value, value}]}, ctx) do
+    %Transcompiler.Let{
       var: String.to_atom(name),
-      value: to_ast(value, ctx)
+      value: to_common_ast(value, ctx),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:function, [{:params, params}, {:block, exprs}]}, ctx) do
-    %Transcompiler.AST.Function{
-      params: Enum.map(params, &to_ast(&1, ctx)),
-      block: Enum.map(exprs, &to_ast(&1, ctx))
+  defp to_common_ast({:lambda, [{:params, params}, {:block, exprs}]}, ctx) do
+    %Transcompiler.Lambda{
+      params: Enum.map(params, &to_common_ast(&1, ctx)),
+      block: Enum.map(exprs, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:call, [{:callee, [{:var, name}]}, {:args, args}]}, ctx) do
-    %Transcompiler.AST.Function.Call{
+  defp to_common_ast({:call, [{:callee, [{:var, name}]}, {:args, args}]}, ctx) do
+    %Transcompiler.Call{
       callee: String.to_atom(name),
-      args: Enum.map(args, &to_ast(&1, ctx))
+      args: Enum.map(args, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:if, [{:condition, condition}, {:then, then}, {:otherwise, otherwise}]}, ctx) do
-    %Transcompiler.AST.If{
-      condition: to_ast(condition, ctx),
-      then: Enum.map(then, &to_ast(&1, ctx)),
-      otherwise: Enum.map(otherwise, &to_ast(&1, ctx))
+  defp to_common_ast({:if, [{:condition, condition}, {:then, then}, {:otherwise, otherwise}]}, ctx) do
+    %Transcompiler.If{
+      condition: to_common_ast(condition, ctx),
+      then: Enum.map(then, &to_common_ast(&1, ctx)),
+      otherwise: Enum.map(otherwise, &to_common_ast(&1, ctx)),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:binary_op, [{:lhs, lhs}, {:op, op}, {:rhs, rhs}]}, ctx) do
-    %Transcompiler.AST.BinaryOp{
-      lhs: to_ast(lhs, ctx),
+  defp to_common_ast({:binary_op, [{:lhs, lhs}, {:op, op}, {:rhs, rhs}]}, ctx) do
+    %Transcompiler.BinaryOp{
+      lhs: to_common_ast(lhs, ctx),
       op: op,
-      rhs: to_ast(rhs, ctx)
+      rhs: to_common_ast(rhs, ctx),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:var, name}, _ctx) do
-    %Transcompiler.AST.Variable{
-      name: String.to_atom(name)
+  defp to_common_ast({:var, name}, ctx) do
+    %Transcompiler.Variable{
+      name: String.to_atom(name),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:integer, value}, _ctx) do
-    %Transcompiler.AST.Integer{
-      value: value
+  defp to_common_ast({:integer, value}, ctx) do
+    %Transcompiler.Integer{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:boolean, value}, _ctx) do
-    %Transcompiler.AST.Boolean{
-      value: value
+  defp to_common_ast({:boolean, value}, ctx) do
+    %Transcompiler.Boolean{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:string, value}, _ctx) do
-    %Transcompiler.AST.String{
-      value: value
+  defp to_common_ast({:string, value}, ctx) do
+    %Transcompiler.String{
+      value: value,
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 
-  defp to_ast({:tuple, [{:first, first}, {:second, second}]}, ctx) do
-    %Transcompiler.AST.Tuple{
-      first: to_ast(first, ctx),
-      second: to_ast(second, ctx)
+  defp to_common_ast({:tuple, [{:first, first}, {:second, second}]}, ctx) do
+    %Transcompiler.Tuple{
+      first: to_common_ast(first, ctx),
+      second: to_common_ast(second, ctx),
+      location: %Transcompiler.File{name: ctx.filename}
     }
   end
 end

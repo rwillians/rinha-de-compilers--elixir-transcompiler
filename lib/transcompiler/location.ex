@@ -1,8 +1,8 @@
-defmodule Transcompiler.AST.Location do
+defmodule Transcompiler.Location do
   @moduledoc false
 
   @typedoc false
-  @type t :: %Transcompiler.AST.Location{
+  @type t :: %Transcompiler.Location{
           filename: String.t(),
           start: pos_integer,
           end: pos_integer

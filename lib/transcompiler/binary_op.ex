@@ -1,4 +1,4 @@
-defmodule Transcompiler.AST.BinaryOp do
+defmodule Transcompiler.BinaryOp do
   @moduledoc false
 
   @type op ::
@@ -17,11 +17,11 @@ defmodule Transcompiler.AST.BinaryOp do
           | :or
 
   @typedoc false
-  @type t :: %Transcompiler.AST.BinaryOp{
-          lhs: Transcompiler.AST.Term.t(),
+  @type t :: %Transcompiler.BinaryOp{
+          lhs: Transcompiler.Term.t(),
           op: op(),
-          rhs: Transcompiler.AST.Term.t(),
-          location: Transcompiler.AST.Location.t()
+          rhs: Transcompiler.Term.t(),
+          location: Transcompiler.Location.t() | nil
         }
-  defstruct [:lhs, :op, :rhs, :location]
+  defstruct [:lhs, :op, :rhs, location: nil]
 end
