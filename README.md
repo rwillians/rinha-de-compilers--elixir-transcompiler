@@ -64,15 +64,31 @@ All functions defined in your `.rinha` program file will be extracted from the s
     mix compile
     ```
 
-### Run using the REPL:
+### Run any `.rinha` program:
 
-Start the session:
+```sh
+mix run play.exs "./relative/path/to/program.rinha"
+```
+
+To compile once then execute `n` times:
+
+```sh
+mix run play.exs "./relative/path/to/program.rinha" 1000
+```
+
+And, if you're running that many times you'll probably want to redirect `stdout` to `/dev/null`:
+
+```sh
+mix run play.exs "./relative/path/to/program.rinha" 1000000 &>/dev/null
+```
+
+### Run using the REPL:
 
 ```sh
 iex -S mix
 ```
 
-Then call whatever function you'd like to see working:
+Call whatever function you'd like to see working:
 
 ```elixir
 Rinha.Fib.main()
@@ -92,18 +108,6 @@ Rinha.Combination.main()
 
 ```elixir
 Rinha.Sum.main()
-```
-
-### Running as a command:
-
-```sh
-mix run -e "Rinha.Sum.main()"
-```
-
-### Run any `.rinha` program (slower):
-
-```sh
-mix run play.exs "./relative/path/to/program.rinha"
 ```
 
 
