@@ -200,7 +200,7 @@ defmodule Rinha.Parser do
   end
 
   defp to_common_ast({:let, [{:var, name}, {:value, value}]}, ctx) do
-    location = %Transcompiler.File{name: ctx.filename}
+    location = %Transcompiler.Location{filename: ctx.filename}
 
     %Transcompiler.Let{
       var: %Transcompiler.Variable{name: String.to_atom(name), location: location},
