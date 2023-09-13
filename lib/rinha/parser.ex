@@ -220,12 +220,27 @@ defmodule Rinha.Parser do
   end
 
   defp to_common_ast({:binary_op, [{:lhs, lhs}, {:op, op}, {:rhs, rhs}]}, ctx) do
-    %Transcompiler.BinaryOp{
+    fields = %{
       lhs: to_common_ast(lhs, ctx),
-      op: op,
       rhs: to_common_ast(rhs, ctx),
       location: %Transcompiler.File{name: ctx.filename}
     }
+
+    case op do
+      :add -> struct(Transcompiler.BinaryOp.Add, fields)
+      :sub -> struct(Transcompiler.BinaryOp.Sub, fields)
+      :mul -> struct(Transcompiler.BinaryOp.Mul, fields)
+      :div -> struct(Transcompiler.BinaryOp.Div, fields)
+      :rem -> struct(Transcompiler.BinaryOp.Rem, fields)
+      :eq  -> struct(Transcompiler.BinaryOp.Eq, fields)
+      :neq -> struct(Transcompiler.BinaryOp.Neq, fields)
+      :lt  -> struct(Transcompiler.BinaryOp.Lt, fields)
+      :gt  -> struct(Transcompiler.BinaryOp.Gt, fields)
+      :lte -> struct(Transcompiler.BinaryOp.Lte, fields)
+      :gte -> struct(Transcompiler.BinaryOp.Gte, fields)
+      :and -> struct(Transcompiler.BinaryOp.And, fields)
+      :or  -> struct(Transcompiler.BinaryOp.Or, fields)
+    end
   end
 
   defp to_common_ast({:var, name}, ctx) do
