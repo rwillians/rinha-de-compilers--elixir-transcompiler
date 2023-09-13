@@ -33,6 +33,6 @@ defimpl Transcompiler.Transpiler, for: Transcompiler.Call do
   def to_elixir_ast(ast, env) do
     args = Enum.map(ast.args, &Transcompiler.Transpiler.to_elixir_ast(&1, env))
 
-    {:fib, [context: env], args}
+    {ast.callee, [context: env], args}
   end
 end
