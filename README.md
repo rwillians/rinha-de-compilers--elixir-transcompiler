@@ -12,7 +12,7 @@ The core idea here is to use Elixir (at compile time) to parse a `.rinha` progra
 
 ## How to use it?
 
-You just need to create a module where the your transpiled `rinha` program will live. To transpcompile the code, all you gotta do is use the `Transcompile` module:
+You just need to create a module where your transpiled `rinha` program will live. To transpcompile the code, all you gotta do is use the `Transcompile` module:
 
 ```elixir
 defmodule Rinha.Fib do
