@@ -5,5 +5,6 @@ defmodule RinhaTest do
 
   doctest Rinha.Combination
   doctest Rinha.Fib
+  doctest Rinha.Print
   doctest Rinha.Sum
 end
