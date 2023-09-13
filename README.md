@@ -64,33 +64,47 @@ All functions defined in your `.rinha` program file will be extracted from the s
     mix compile
     ```
 
-6.  run the REPL:
+### Run using the REPL:
 
-    ```sh
-    iex -S mix
-    ```
+Start the session:
 
-7.  Call whatever function you'd like to see working:
+```sh
+iex -S mix
+```
 
-    ```elixir
-    Rinha.Fib.main()
-    ```
+Then call whatever function you'd like to see working:
 
-    Note that functions specified in the program are public functions, meaning you could call `fib/1` from the REPL as well:
+```elixir
+Rinha.Fib.main()
+```
 
-    ```elixir
-    Rinha.Fib.fib(15)
-    ```
+Note that functions specified in the program are public functions, meaning you could call `fib/1` from the REPL as well:
 
-    You can also play with the other test programs:
+```elixir
+Rinha.Fib.fib(15)
+```
 
-    ```elixir
-    Rinha.Combination.main()
-    ```
+You can also play with the other test programs:
 
-    ```elixir
-    Rinha.Sum.main()
-    ```
+```elixir
+Rinha.Combination.main()
+```
+
+```elixir
+Rinha.Sum.main()
+```
+
+### Running as a command:
+
+```sh
+mix run -e "Rinha.Sum.main()"
+```
+
+### Run any `.rinha` program (slower):
+
+```sh
+mix run play.exs "./relative/path/to/program.rinha"
+```
 
 
 ## How does it work?
