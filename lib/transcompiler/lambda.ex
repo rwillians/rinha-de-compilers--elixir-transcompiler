@@ -6,8 +6,8 @@ defmodule Transcompiler.Lambda do
   @typedoc false
   @type t :: %Transcompiler.Lambda{
           params: [Transcompiler.Lambda.Parameter.t()],
-          block: [Transcompiler.Expr.t()],
-          location: Transcompiler.Location.t() | nil
+          block: Transcompiler.Block.t(),
+          location: Transcompiler.Location.t()
         }
-  defstruct [:params, :block, location: nil]
+  defstruct [:params, :block, :location]
 end

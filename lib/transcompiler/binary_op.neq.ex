@@ -5,9 +5,9 @@ defmodule Transcompiler.BinaryOp.Neq do
   @type t :: %Transcompiler.BinaryOp.Neq{
           lhs: Transcompiler.Term.t(),
           rhs: Transcompiler.Term.t(),
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:lhs, :rhs, location: nil]
+  defstruct [:lhs, :rhs, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.BinaryOp.Neq do

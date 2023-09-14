@@ -4,9 +4,9 @@ defmodule Transcompiler.Boolean do
   @typedoc false
   @type t :: %Transcompiler.Boolean{
           value: boolean,
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:value, location: nil]
+  defstruct [:value, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.Boolean do

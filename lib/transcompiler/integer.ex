@@ -4,9 +4,9 @@ defmodule Transcompiler.Integer do
   @typedoc false
   @type t :: %Transcompiler.Integer{
           value: integer,
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:value, location: nil]
+  defstruct [:value, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.Integer do

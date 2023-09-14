@@ -5,9 +5,9 @@ defmodule Transcompiler.Tuple do
   @type t :: %Transcompiler.Tuple{
           first: Transcompiler.Term.t(),
           second: Transcompiler.Term.t(),
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:first, :second, location: nil]
+  defstruct [:first, :second, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.Tuple do

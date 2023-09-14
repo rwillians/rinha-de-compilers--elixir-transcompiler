@@ -4,9 +4,9 @@ defmodule Transcompiler.String do
   @typedoc false
   @type t :: %Transcompiler.String{
           value: String.t(),
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:value, location: nil]
+  defstruct [:value, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.String do

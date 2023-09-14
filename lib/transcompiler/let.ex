@@ -5,9 +5,9 @@ defmodule Transcompiler.Let do
   @type t :: %Transcompiler.Let{
           var: Transcompiler.Parameter.t(),
           value: Transcompiler.Term.t(),
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:var, :value, location: nil]
+  defstruct [:var, :value, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.Let do

@@ -37,10 +37,20 @@ defmodule Transcompiler do
     quote do
       @external_resource unquote(path)
 
-      ast = unquote(source)
-            |> unquote(parser).parse(unquote(path))
-            |> Ex.Tuple.unwrap!()
-            |> unquote(__MODULE__).transpile(__MODULE__)
+      result = unquote(source)
+               |> unquote(parser).parse(unquote(path))
+
+      ast =
+        case result do
+          {:ok, expr} ->
+            unquote(__MODULE__).transpile(expr, __MODULE__)
+
+          {:error, msg, file, line} ->
+            raise CompileError,
+                  file: file,
+                  line: line,
+                  description: msg
+        end
 
       Module.eval_quoted(__MODULE__, ast)
     end

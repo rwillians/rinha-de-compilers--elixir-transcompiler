@@ -6,32 +6,30 @@ defmodule Transcompiler.If do
           condition: Transcompiler.Boolean.t() | Transcompiler.BinaryOp.t(),
           then: [Transcompiler.Expr.t(), ...],
           otherwise: [Transcompiler.Expr.t()],
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:condition, :then, :otherwise, location: nil]
+  defstruct [:condition, :then, :otherwise, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.If do
   def to_elixir_ast(%{otherwise: nil} = ast, env) do
-    then = Enum.map(ast.then, &Transpilable.to_elixir_ast(&1, env))
-
-    {:if, [context: env, imports: [{1, Kernel}, {2, Kernel}]],
-     [
-       Transpilable.to_elixir_ast(ast.condition, env),
-       [do: {:__block__, [], then}]
-     ]}
-  end
-
-  def to_elixir_ast(ast, env) do
-    then = Enum.map(ast.then, &Transpilable.to_elixir_ast(&1, env))
-    otherwise = Enum.map(ast.otherwise, &Transpilable.to_elixir_ast(&1, env))
-
     {:if, [context: env, imports: [{1, Kernel}, {2, Kernel}]],
      [
        Transpilable.to_elixir_ast(ast.condition, env),
        [
-         do: {:__block__, [], then},
-         else: {:__block__, [], otherwise}
+         do: Transpilable.to_elixir_ast(ast.then, env),
+         else: nil
+       ]
+     ]}
+  end
+
+  def to_elixir_ast(ast, env) do
+    {:if, [context: env, imports: [{1, Kernel}, {2, Kernel}]],
+     [
+       Transpilable.to_elixir_ast(ast.condition, env),
+       [
+         do: Transpilable.to_elixir_ast(ast.then, env),
+         else: Transpilable.to_elixir_ast(ast.otherwise, env)
        ]
      ]}
   end

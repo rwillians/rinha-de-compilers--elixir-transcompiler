@@ -4,9 +4,9 @@ defmodule Transcompiler.Parameter do
   @typedoc false
   @type t :: %Transcompiler.Parameter{
           name: atom,
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:name, location: nil]
+  defstruct [:name, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.Parameter do

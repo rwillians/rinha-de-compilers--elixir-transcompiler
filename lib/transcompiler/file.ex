@@ -5,9 +5,9 @@ defmodule Transcompiler.File do
   @type t :: %Transcompiler.File{
           name: String.t(),
           block: [Transcompiler.Expr.t()],
-          location: Transcompiler.Location.t() | nil
+          location: Transcompiler.Location.t()
         }
-  defstruct [:name, :block, location: nil]
+  defstruct [:name, :block, :location]
 end
 
 defimpl Transpilable, for: Transcompiler.File do
