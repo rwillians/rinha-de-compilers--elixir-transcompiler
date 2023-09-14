@@ -47,10 +47,10 @@ defmodule Transcompiler do
   end
 
   @doc """
-  Transpiles the given AST into Elixir AST.
+  Transpiles a given generic AST node into Elixir AST.
   """
   @spec transpile(Transcompiler.AST.Expr.t(), env :: module) :: Macro.t()
 
-  def transpile(%Transcompiler.File{} = ast, env),
-    do: Transcompiler.Transpiler.to_elixir_ast(ast, env)
+  def transpile(expr, env),
+    do: Transpilable.to_elixir_ast(expr, env)
 end

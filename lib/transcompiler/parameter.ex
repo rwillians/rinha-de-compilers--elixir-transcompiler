@@ -9,6 +9,6 @@ defmodule Transcompiler.Parameter do
   defstruct [:name, location: nil]
 end
 
-defimpl Transcompiler.Transpiler, for: Transcompiler.Parameter do
+defimpl Transpilable, for: Transcompiler.Parameter do
   def to_elixir_ast(ast, env), do: {ast.name, [], env}
 end

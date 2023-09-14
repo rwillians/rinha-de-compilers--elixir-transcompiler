@@ -10,7 +10,7 @@ defmodule Transcompiler.File do
   defstruct [:name, :block, location: nil]
 end
 
-defimpl Transcompiler.Transpiler, for: Transcompiler.File do
+defimpl Transpilable, for: Transcompiler.File do
   def to_elixir_ast(ast, env) do
     fns = Enum.filter(ast.block, &(&1.__struct__ == Transcompiler.Function))
     tokens = Enum.reject(ast.block, &(&1.__struct__ == Transcompiler.Function))
@@ -22,13 +22,13 @@ defimpl Transcompiler.Transpiler, for: Transcompiler.File do
 
 
     block =
-      Enum.map(fns, &Transcompiler.Transpiler.to_elixir_ast(&1, env)) ++
+      Enum.map(fns, &Transpilable.to_elixir_ast(&1, env)) ++
         [
           {:def, [context: env, imports: [{1, Kernel}, {2, Kernel}]],
            [
              {:main, [context: env], []},
              [
-               do: {:__block__, [], Enum.map(tokens, &Transcompiler.Transpiler.to_elixir_ast(&1, env))}
+               do: {:__block__, [], Enum.map(tokens, &Transpilable.to_elixir_ast(&1, env))}
              ]
            ]}
         ]

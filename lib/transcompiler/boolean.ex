@@ -9,6 +9,6 @@ defmodule Transcompiler.Boolean do
   defstruct [:value, location: nil]
 end
 
-defimpl Transcompiler.Transpiler, for: Transcompiler.Boolean do
+defimpl Transpilable, for: Transcompiler.Boolean do
   def to_elixir_ast(ast, _), do: ast.value
 end

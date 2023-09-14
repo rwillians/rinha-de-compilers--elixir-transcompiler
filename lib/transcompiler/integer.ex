@@ -9,6 +9,6 @@ defmodule Transcompiler.Integer do
   defstruct [:value, location: nil]
 end
 
-defimpl Transcompiler.Transpiler, for: Transcompiler.Integer do
+defimpl Transpilable, for: Transcompiler.Integer do
   def to_elixir_ast(ast, _env), do: ast.value
 end

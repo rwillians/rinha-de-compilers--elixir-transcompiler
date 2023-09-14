@@ -10,11 +10,11 @@ defmodule Transcompiler.Let do
   defstruct [:var, :value, location: nil]
 end
 
-defimpl Transcompiler.Transpiler, for: Transcompiler.Let do
+defimpl Transpilable, for: Transcompiler.Let do
   def to_elixir_ast(ast, env) do
     {:=, [], [
       {ast.var.name, [], env},
-      Transcompiler.Transpiler.to_elixir_ast(ast.value, env)
+      Transpilable.to_elixir_ast(ast.value, env)
     ]}
   end
 end

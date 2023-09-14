@@ -1,4 +1,4 @@
-defprotocol Transcompiler.Transpiler do
+defprotocol Transpilable do
   @moduledoc false
 
   @doc false
