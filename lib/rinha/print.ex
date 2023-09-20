@@ -9,5 +9,5 @@ defmodule Rinha.Print do
   """
   use Transcompiler,
     source: {:file, path: ".rinha/files/print.rinha"},
-    parser: Rinha.Parser
+    parser: Parser
 end

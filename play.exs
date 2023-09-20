@@ -7,29 +7,42 @@
       {path, String.to_integer(n)}
 
     _ ->
+      faint = IO.ANSI.faint()
+      reset = IO.ANSI.reset()
+      bold = "\e[1m"
+
       raise ArgumentError,
             message: """
             missing arguments
 
-            Usage:  mix run play.exs path [n]
+            #{faint}#{bold}Usage:#{reset}  mix run play.exs path [n]
 
-              path  Relative path to a `.rinha` program.
+              #{faint}#{bold}path#{reset}  #{faint}Relative path to a `.rinha` program.#{reset}
 
-                 n  The number of times the program should be executed
-                    (meant for benchmarking).
+                 #{faint}#{bold}n#{reset}  #{faint}The number of times the program should be executed
+                    (meant for benchmarking).#{reset}
+
             """
   end
 
-ast =
-  File.read!(path)
-  |> Rinha.Parser.parse(path)
-  |> Ex.Tuple.unwrap!()
-  |> Transcompiler.transpile(Play)
+result = File.read!(path) |> Parser.parse(path)
+
+block =
+  case result do
+    {:ok, expr} ->
+      Transpilable.to_elixir_ast(expr, __MODULE__)
+
+    {:error, msg, file, line} ->
+      raise CompileError,
+            file: file,
+            line: line,
+            description: msg
+  end
 
 ast =
   {:defmodule, [imports: [{2, Kernel}]], [
     {:__aliases__, [alias: false], [:Play]},
-    [do: ast]
+    [do: block]
   ]}
 
 [{_mod, _bin}] = Code.compile_quoted(ast, "::in-line")

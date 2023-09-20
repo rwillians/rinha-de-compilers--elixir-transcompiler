@@ -9,14 +9,14 @@ defmodule Transcompiler do
       defmodule Rinha.Fib do
         use Transcompiler,
           source: {:file, path: ".rinha/files/fib.rinha"},
-          parser: Rinha.Parser
+          parser: Parser
       end
 
   ### Inline source:
 
       defmodule Rinha.Math do
         use Transcompiler,
-          parser: Rinha.Parser,
+          parser: Parser,
           source: \"\"\"
           let add = fn (a, b) => { a + b };
           \"\"\"
@@ -37,30 +37,21 @@ defmodule Transcompiler do
     quote do
       @external_resource unquote(path)
 
-      result = unquote(source)
-               |> unquote(parser).parse(unquote(path))
+      result = unquote(parser).parse(unquote(source), unquote(path))
 
       ast =
         case result do
           {:ok, expr} ->
-            unquote(__MODULE__).transpile(expr, __MODULE__)
+            Transpilable.to_elixir_ast(expr, __MODULE__)
 
           {:error, msg, file, line} ->
             raise CompileError,
-                  file: file,
-                  line: line,
-                  description: msg
+              file: file,
+              line: line,
+              description: msg
         end
 
       Module.eval_quoted(__MODULE__, ast)
     end
   end
-
-  @doc """
-  Transpiles a given generic AST node into Elixir AST.
-  """
-  @spec transpile(Transcompiler.AST.Expr.t(), env :: module) :: Macro.t()
-
-  def transpile(expr, env),
-    do: Transpilable.to_elixir_ast(expr, env)
 end
