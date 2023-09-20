@@ -1,0 +1,63 @@
+#! /usr/bin/env sh
+
+#
+# Rode em uma máquina x64 (intel/amd)
+#
+
+NEGRITO=''
+ESMAECIDO=''
+RESET=''
+VERMELHO_NEGRITO=''
+
+if [ -t 1 ]; then
+  NEGRITO='\033[1m'
+  ESMAECIDO='\033[0;2m'
+  RESET='\033[0m'
+  VERMELHO_NEGRITO='\033[1;31m'
+fi
+
+VERSION=${1}
+COMMIT_SHA=$(git rev-parse HEAD)
+
+if [ -z "${VERSION}" ]; then
+  echo ""
+  echo "${VERMELHO_NEGRITO}Faltou passar a versão da imagem como argumento${RESET}"
+  echo ""
+  echo "${ESMAECIDO}É para usar assim oh:${RESET}"
+  echo ""
+  echo "    ${ESMAECIDO}./build-push-arm64${RESET} ${NEGRITO}0.2.5${NEGRITO}"
+  echo ""
+
+  exit 1
+fi
+
+docker --context=default buildx build \
+  -t "ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:${VERSION}-arm64" \
+  --label "maintainer=rwillians" \
+  --label "org.opencontainers.image.source=https://github.com/rwillians/rinha-de-compilers--elixir-transcompiler" \
+  --label "org.opencontainers.image.revision=${COMMIT_SHA}" \
+  --label "org.opencontainers.image.licenses=MIT" \
+  --builder default \
+  --platform linux/arm64 \
+  --push .
+
+docker --context=default buildx build \
+  -t "ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:${VERSION}-armv8" \
+  --label "maintainer=rwillians" \
+  --label "org.opencontainers.image.source=https://github.com/rwillians/rinha-de-compilers--elixir-transcompiler" \
+  --label "org.opencontainers.image.revision=${COMMIT_SHA}" \
+  --label "org.opencontainers.image.licenses=MIT" \
+  --builder default \
+  --platform linux/arm/v8 \
+  --push .
+
+docker --context=default buildx build \
+  -t "ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:${VERSION}-armv7" \
+  --label "maintainer=rwillians" \
+  --label "org.opencontainers.image.source=https://github.com/rwillians/rinha-de-compilers--elixir-transcompiler" \
+  --label "org.opencontainers.image.revision=${COMMIT_SHA}" \
+  --label "org.opencontainers.image.licenses=MIT" \
+  --builder default \
+  --platform linux/arm/v7 \
+  --push .
+
