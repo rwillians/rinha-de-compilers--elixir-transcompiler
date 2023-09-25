@@ -13,6 +13,12 @@ Fancy names apart, the core idea here is that we take a program `.rinha`, parse 
 
 ## Instructions for the competition's organizers on how to run it
 
+You might opt for using a pre-built image:
+
+```sh
+docker pull ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:0.2.0
+```
+
 ### Clone
 ```sh
 git clone git@github.com:rwillians/rinha-de-compilers--elixir-transcompiler.git rwillians
