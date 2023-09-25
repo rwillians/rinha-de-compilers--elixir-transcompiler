@@ -27,6 +27,7 @@ defmodule Parser do
                    parsec(:call),
                    parsec(:var)
                  ])
+                 |> ignore(optional(string(";")))
 
   defparsecp :expr,
              choice([
@@ -36,6 +37,8 @@ defmodule Parser do
                parsec(:binary_op),
                parsec(:term)
              ])
+             |> ignore(repeat(blank))
+             |> ignore(optional(string(";")))
              |> ignore(repeat(blank))
 
   defparsec :bool,
