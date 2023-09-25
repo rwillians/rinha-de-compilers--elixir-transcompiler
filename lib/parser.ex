@@ -71,9 +71,9 @@ defmodule Parser do
   defparsec :str,
             unwrap_and_tag(parsec(:offset), :start_offset)
             |> unwrap_and_tag(parsec(:ln), :start_line)
-            |> ignore(string(~S(")))
+            |> ignore(choice([string(~S(\")), string(~S("))]))
             |> unwrap_and_tag(ascii_string([not: ?"], min: 0), :value)
-            |> ignore(string(~S(")))
+            |> ignore(choice([string(~S(\")), string(~S("))]))
             |> unwrap_and_tag(parsec(:ln), :end_line)
             |> unwrap_and_tag(parsec(:offset), :end_offset)
             |> tag(:string)
@@ -157,9 +157,12 @@ defmodule Parser do
              unwrap_and_tag(parsec(:offset), :start_offset)
              |> unwrap_and_tag(parsec(:ln), :start_line)
              |> unwrap_and_tag(
-               utf8_string([?a..?z], 1)
-               |> concat(utf8_string([?a..?z, ?0..?9, ?_], min: 0))
-               |> reduce({Enum, :join, [""]}),
+               choice([
+                utf8_string([?a..?z], 1)
+                |> concat(utf8_string([?a..?z, ?0..?9, ?_], min: 0))
+                |> reduce({Enum, :join, [""]}),
+                string("_")
+               ]),
                :value
              )
              |> unwrap_and_tag(parsec(:ln), :end_line)
