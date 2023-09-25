@@ -14,15 +14,15 @@ defimpl Transpilable, for: AST.Call do
   import Enum, only: [map: 2]
 
   def to_elixir_ast(%{callee: %{name: :print}} = ast, env) do
-    args = map(ast.args, &Transpilable.to_elixir_ast(&1, env))
+    [arg] = map(ast.args, &Transpilable.to_elixir_ast(&1, env))
 
-    {:__block__, [],
-     [
-       {{:., [file: ast.location.filename, line: ast.location.start.line],
-         [{:__aliases__, [alias: false], [:IO]}, :puts]}, [],
-        [{:to_string, [context: env, imports: [{1, Kernel}]], args}]},
-        args
-     ]}
+    print =
+      {{:., [], [{:__aliases__, [alias: false], [:IO]}, :puts]}, [],
+       [
+         {:to_string, [context: env, imports: [{1, Kernel}]], [arg]}
+       ]}
+
+    {:__block__, [], [print, arg]}
   end
 
   def to_elixir_ast(%{callee: %{name: :first}} = ast, env) do

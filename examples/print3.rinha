@@ -1,0 +1,5 @@
+let _ = print(1); print(2)
+let tuple = (print(1), print(2)); print(tuple);
+
+print(fn () => { "foo" })
+

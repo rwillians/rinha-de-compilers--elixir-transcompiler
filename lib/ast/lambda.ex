@@ -11,3 +11,14 @@ defmodule AST.Lambda do
         }
   defstruct [:params, :block, :location]
 end
+
+defimpl Transpilable, for: AST.Lambda do
+  def to_elixir_ast(ast, env) do
+    params = Enum.map(ast.params, &Transpilable.to_elixir_ast(&1, env))
+
+    {:fn, [],
+     [
+       {:->, [], [params, Transpilable.to_elixir_ast(ast.block, env)]}
+     ]}
+  end
+end

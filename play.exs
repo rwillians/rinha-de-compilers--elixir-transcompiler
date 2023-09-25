@@ -30,7 +30,7 @@ result = File.read!(path) |> Parser.parse(path)
 block =
   case result do
     {:ok, expr} ->
-      Transpilable.to_elixir_ast(expr, __MODULE__)
+      Transpilable.to_elixir_ast(expr, Play)
 
     {:error, msg, file, line} ->
       raise CompileError,
