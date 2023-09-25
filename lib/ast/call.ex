@@ -19,11 +19,13 @@ defimpl Transpilable, for: AST.Call do
         [arg] ->
           arg
 
-        _ ->
+        args ->
           raise CompileError,
             file: ast.location.filename,
             line: ast.location.start.line,
-            description: "expected `print/1` to be called with exactly 1 argument."
+            description: """
+            expected `print/1` to be called with exactly 1 argument, #{length(args)} args were given
+            """
       end
 
     {:__block__, [],
