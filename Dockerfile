@@ -29,7 +29,8 @@ RUN mix local.hex --force && \
 
 COPY --from=build /app/ /app/
 
-VOLUME [ "/data" ]
+VOLUME [ "/var/rinha/" ]
 
 STOPSIGNAL SIGINT
-ENTRYPOINT [ "mix" ]
+ENTRYPOINT [ "mix", "run", "play.exs" ]
+CMD [ "/var/rinha/source.rinha" ]
