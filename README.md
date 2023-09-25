@@ -16,7 +16,7 @@ Fancy names apart, the core idea here is that we take a program `.rinha`, parse 
 You might opt for using a pre-built image:
 
 ```sh
-docker pull ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:0.2.0
+docker pull ghcr.io/rwillians/rinha-de-compilers--elixir-transcompiler:0.2.2
 ```
 
 ### Clone
