@@ -4,6 +4,7 @@ defmodule Parser do
   import Enum, only: [map: 2]
   import NimbleParsec, except: [map: 2, map: 3]
   import Parser.ErrorHandler, only: [format: 2]
+  import String, only: [to_atom: 1]
 
   space = ascii_char([?\s])
   blank = ascii_char([?\r, ?\n, ?\s, ?\t])
@@ -12,8 +13,11 @@ defmodule Parser do
   defcombinatorp :offset, empty() |> pre_traverse(:offset)
   defcombinatorp :ln, empty() |> line()
 
+  defcombinator :null, empty() |> string("null") |> replace(nil)
+
   defcombinatorp :term,
                  choice([
+                   parsec(:null),
                    parsec(:wrapped_binary_op),
                    parsec(:tuple),
                    parsec(:bool),
@@ -117,13 +121,29 @@ defmodule Parser do
              |> unwrap_and_tag(parsec(:offset), :end_offset)
              |> tag(:let)
 
+  defcombinatorp :param,
+                 empty()
+                 |> unwrap_and_tag(parsec(:offset), :start_offset)
+                 |> unwrap_and_tag(parsec(:ln), :start_line)
+                 |> unwrap_and_tag(parsec(:var), :var)
+                 |> choice([
+                   ignore(repeat(space))
+                   |> ignore(string("="))
+                   |> ignore(repeat(space))
+                   |> unwrap_and_tag(parsec(:term), :default_value),
+                   ignore(empty())
+                 ])
+                 |> unwrap_and_tag(parsec(:ln), :end_line)
+                 |> unwrap_and_tag(parsec(:offset), :end_offset)
+                 |> tag(:param)
+
   defparsecp :lambda,
              unwrap_and_tag(parsec(:offset), :start_offset)
              |> unwrap_and_tag(parsec(:ln), :start_line)
              |> ignore(string("fn"))
              |> ignore(repeat(space))
              |> ignore(string("("))
-             |> tag(repeat(parsec(:var) |> optional(ignore(separator))), :params)
+             |> tag(repeat(parsec(:param) |> optional(ignore(separator))), :params)
              |> ignore(string(")"))
              |> ignore(repeat(space))
              |> ignore(string("=>"))
@@ -185,17 +205,17 @@ defmodule Parser do
 
   defparsecp :operator,
              choice([
-               string("+") |> lookahead(space) |> replace(:add),
-               string("-") |> lookahead(space) |> replace(:sub),
-               string("*") |> lookahead(space) |> replace(:mul),
-               string("/") |> lookahead(space) |> replace(:div),
-               string("%") |> lookahead(space) |> replace(:rem),
+               string("+")  |> lookahead(space) |> replace(:add),
+               string("-")  |> lookahead(space) |> replace(:sub),
+               string("*")  |> lookahead(space) |> replace(:mul),
+               string("/")  |> lookahead(space) |> replace(:div),
+               string("%")  |> lookahead(space) |> replace(:rem),
                string("==") |> lookahead(space) |> replace(:eq),
                string("!=") |> lookahead(space) |> replace(:neq),
                string("<=") |> lookahead(space) |> replace(:lte),
-               string("<") |> lookahead(space) |> replace(:lt),
+               string("<")  |> lookahead(space) |> replace(:lt),
                string(">=") |> lookahead(space) |> replace(:gte),
-               string(">") |> lookahead(space) |> replace(:gt),
+               string(">")  |> lookahead(space) |> replace(:gt),
                string("&&") |> lookahead(space) |> replace(:and),
                string("||") |> lookahead(space) |> replace(:or),
                empty() |> post_traverse({:error, ["unknown operator"]})
@@ -350,6 +370,43 @@ defmodule Parser do
   end
 
   defp to_common_ast(
+         {:param,
+          [
+            {:start_offset, start_offset},
+            {:start_line, start_line},
+            {:var, var},
+            {:default_value, default_value},
+            {:end_line, end_line},
+            {:end_offset, end_offset}
+          ]},
+         ctx
+       ) do
+    %AST.Parameter{
+      var: to_common_ast(var, ctx),
+      default_value: to_common_ast(default_value, ctx),
+      location: to_common_ast({:loc, {{start_line, start_offset}, {end_line, end_offset}}}, ctx)
+    }
+  end
+
+  defp to_common_ast(
+         {:param,
+          [
+            {:start_offset, start_offset},
+            {:start_line, start_line},
+            {:var, var},
+            {:end_line, end_line},
+            {:end_offset, end_offset}
+          ]},
+         ctx
+       ) do
+    %AST.Parameter{
+      var: to_common_ast(var, ctx),
+      default_value: :undefined,
+      location: to_common_ast({:loc, {{start_line, start_offset}, {end_line, end_offset}}}, ctx)
+    }
+  end
+
+  defp to_common_ast(
          {:lambda,
           [
             {:start_offset, start_offset},
@@ -433,14 +490,14 @@ defmodule Parser do
       :mul -> struct(AST.BinaryOp.Mul, fields)
       :div -> struct(AST.BinaryOp.Div, fields)
       :rem -> struct(AST.BinaryOp.Rem, fields)
-      :eq -> struct(AST.BinaryOp.Eq, fields)
+      :eq  -> struct(AST.BinaryOp.Eq, fields)
       :neq -> struct(AST.BinaryOp.Neq, fields)
-      :lt -> struct(AST.BinaryOp.Lt, fields)
-      :gt -> struct(AST.BinaryOp.Gt, fields)
+      :lt  -> struct(AST.BinaryOp.Lt, fields)
+      :gt  -> struct(AST.BinaryOp.Gt, fields)
       :lte -> struct(AST.BinaryOp.Lte, fields)
       :gte -> struct(AST.BinaryOp.Gte, fields)
       :and -> struct(AST.BinaryOp.And, fields)
-      :or -> struct(AST.BinaryOp.Or, fields)
+      :or  -> struct(AST.BinaryOp.Or, fields)
     end
   end
 
@@ -456,7 +513,7 @@ defmodule Parser do
          ctx
        ) do
     %AST.Variable{
-      name: String.to_atom(name),
+      name: to_atom(name),
       location: to_common_ast({:loc, {{start_line, start_offset}, {end_line, end_offset}}}, ctx)
     }
   end

@@ -37,6 +37,8 @@ docker build -t rwillians .
 ```sh
 docker run \
   --mount type=bind,source="/absolute/path/to/source.rinha",target="/var/rinha/source.rinha" \
+  --memory=2gb \
+  --cpus=2 \
   rwillians
   # compile once, run the program 1 time
 ```
@@ -45,6 +47,8 @@ docker run \
 ```sh
 docker run \
   --mount type=bind,source="/absolute/path/to/source.rinha",target="/var/rinha/source.rinha" \
+  --memory=2gb \
+  --cpus=2 \
   rwillians /var/rinha/source.rinha 10
   #                                 ^ compile once, run the program 10 times
 ```

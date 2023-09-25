@@ -5,7 +5,7 @@ defmodule AST.Lambda do
 
   @typedoc false
   @type t :: %AST.Lambda{
-          params: [AST.Lambda.Parameter.t()],
+          params: [AST.Parameter.t()],
           block: AST.Block.t(),
           location: AST.Location.t()
         }
