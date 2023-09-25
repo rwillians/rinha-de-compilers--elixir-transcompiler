@@ -59,3 +59,7 @@ time docker run \
   rwillians /var/rinha/source.rinha 1000000
   #                                 ^ compile once, run the program 1Mi times
 ```
+
+## About me
+
+I'm here[¹](https://www.imdb.com/title/tt1571404/) in the old blue bird at [@rwillians_](https://twitter.com/rwillians).
