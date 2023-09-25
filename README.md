@@ -38,11 +38,7 @@ docker build -t rwillians .
 docker run \
   --mount type=bind,source="/absolute/path/to/source.rinha",target="/var/rinha/source.rinha" \
   rwillians
-
-# eg:
-# docker run \
-#   --mount type=bind,source="/Users/rwillians/Projects/oss/rinha-de-compilers--elixir-transpiler/.rinha/files/fib.rinha",target="/var/rinha/source.rinha" \
-#   rwillians
+  # compile once, run the program 1 time
 ```
 
 ### Run a program multiple times (for benchmarking):
@@ -56,7 +52,10 @@ docker run \
 ```sh
 time docker run \
   --mount type=bind,source="/absolute/path/to/source.rinha",target="/var/rinha/source.rinha" \
-  rwillians /var/rinha/source.rinha 1000000
+  --memory=2gb \
+  --cpus=2 \
+  rwillians /var/rinha/source.rinha 1000000 &>/dev/null
+  #                                 ^       ^ redireciona stdout para /dev/null
   #                                 ^ compile once, run the program 1Mi times
 ```
 
